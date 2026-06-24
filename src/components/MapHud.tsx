@@ -26,7 +26,7 @@ export function DrawControls() {
   const canFinish = tool !== "draw-circle" && draft.length >= min;
 
   return (
-    <div className="pointer-events-auto absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2 rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel/90 px-3 py-2.5 backdrop-blur-md">
+    <div className="pointer-events-auto absolute bottom-[calc(5.25rem+var(--safe-bottom))] left-1/2 z-30 flex w-[min(94vw,26rem)] -translate-x-1/2 flex-col items-center gap-2 rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel/90 px-3 py-2.5 backdrop-blur-md lg:bottom-6 lg:w-auto">
       <span className="text-[11px] text-tac-muted">
         {DRAW_HINTS[tool]} <span className="text-tac-text">· {draft.length} pts</span>
       </span>
@@ -75,7 +75,7 @@ export function NavHud() {
   const brg = bearing(here, to);
 
   return (
-    <div className="pointer-events-auto absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-3 rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel/90 px-3 py-2 backdrop-blur-md">
+    <div className="pointer-events-auto absolute left-1/2 top-[calc(var(--statusbar-h)+0.5rem)] z-30 flex -translate-x-1/2 items-center gap-3 rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel/90 px-3 py-2 backdrop-blur-md">
       <Navigation className="h-4 w-4 text-fuchsia-300" style={{ transform: `rotate(${brg}deg)` }} />
       <div className="leading-tight">
         <div className="font-mono text-sm font-semibold text-tac-text">{label}</div>
@@ -123,7 +123,7 @@ export function AlertBanner() {
   if (list.length === 0) return null;
 
   return (
-    <div className="pointer-events-auto absolute left-1/2 top-3 z-40 flex w-[min(92vw,28rem)] -translate-x-1/2 flex-col gap-1.5">
+    <div className="pointer-events-auto absolute left-1/2 top-[calc(var(--statusbar-h)+0.5rem)] z-40 flex w-[min(92vw,28rem)] -translate-x-1/2 flex-col gap-1.5">
       {list.map((a) => {
         const dist =
           selfLat != null && selfLng != null

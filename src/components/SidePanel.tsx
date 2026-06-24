@@ -26,19 +26,23 @@ const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
 
 export function SidePanel() {
   const [tab, setTab] = useState<Tab>("units");
-  const [open, setOpen] = useState(true);
+  // Phones boot with the panel closed so the map (the product) owns first paint;
+  // tablets/desktops have room to show it alongside.
+  const [open, setOpen] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia("(min-width: 768px)").matches,
+  );
   const unread = useStore((s) => s.unread);
   const peerCount = useStore((s) => Object.keys(s.peers).length);
 
   return (
     <>
-      {/* Reopen handle */}
+      {/* Reopen handle — taller tap target on touch */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir panel"
-          className="pointer-events-auto absolute right-0 top-1/2 z-20 flex h-12 w-8 -translate-y-1/2 items-center justify-center rounded-l-[var(--radius-tac)] border border-r-0 border-tac-line bg-tac-panel/90 text-tac-muted backdrop-blur-md hover:text-tac-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tac-accent"
+          className="pointer-events-auto absolute right-0 top-1/2 z-20 flex h-16 w-9 -translate-y-1/2 items-center justify-center rounded-l-[var(--radius-tac)] border border-r-0 border-tac-line bg-tac-panel/90 text-tac-muted backdrop-blur-md hover:text-tac-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tac-accent"
         >
           <ChevronRight className="h-4 w-4 rotate-180" />
         </button>
@@ -46,9 +50,10 @@ export function SidePanel() {
 
       <aside
         className={cn(
-          "pointer-events-auto absolute bottom-0 right-0 top-11 z-20 flex w-[340px] max-w-[88vw] flex-col border-l border-tac-line bg-tac-panel/95 backdrop-blur-md transition-transform duration-200",
+          "pointer-events-auto absolute bottom-0 right-0 z-20 flex w-full flex-col border-l border-tac-line bg-tac-panel/95 backdrop-blur-md transition-transform duration-200 sm:w-[360px] sm:max-w-[88vw]",
           open ? "translate-x-0" : "translate-x-full",
         )}
+        style={{ top: "var(--statusbar-h)" }}
       >
         {/* Tab strip */}
         <div className="flex items-stretch border-b border-tac-line">
@@ -58,7 +63,7 @@ export function SidePanel() {
               type="button"
               onClick={() => setTab(t.id)}
               className={cn(
-                "relative flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold uppercase tracking-wide transition-colors",
+                "relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition-colors sm:py-2.5",
                 tab === t.id
                   ? "bg-tac-panel-2 text-tac-accent"
                   : "text-tac-muted hover:text-tac-text",
@@ -92,7 +97,10 @@ export function SidePanel() {
         </div>
 
         {/* Body */}
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div
+          className="min-h-0 flex-1 overflow-hidden"
+          style={{ paddingBottom: "var(--safe-bottom)" }}
+        >
           {tab === "chat" ? (
             <ChatPanel />
           ) : tab === "link" ? (

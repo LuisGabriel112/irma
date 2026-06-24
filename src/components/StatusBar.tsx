@@ -49,15 +49,23 @@ export function StatusBar() {
   const hasFix = lat != null && lng != null;
 
   return (
-    <header className="pointer-events-auto absolute inset-x-0 top-0 z-20 flex h-11 items-center gap-3 border-b border-tac-line bg-tac-panel/85 px-3 backdrop-blur-md">
+    <header
+      className="pointer-events-auto absolute inset-x-0 top-0 z-20 flex items-center gap-2.5 border-b border-tac-line bg-tac-panel/85 px-3 backdrop-blur-md sm:gap-3"
+      style={{
+        height: "var(--statusbar-h)",
+        paddingTop: "var(--safe-top)",
+        paddingLeft: "max(0.75rem, var(--safe-left))",
+        paddingRight: "max(0.75rem, var(--safe-right))",
+      }}
+    >
       <div className="flex items-center gap-2">
         <span className="font-mono text-sm font-bold tracking-[0.18em] text-tac-accent">IRMA</span>
-        <span className="hidden text-[10px] uppercase tracking-widest text-tac-muted sm:inline">
+        <span className="hidden text-[10px] uppercase tracking-widest text-tac-muted md:inline">
           Conciencia Táctica
         </span>
       </div>
 
-      <div className="h-5 w-px bg-tac-line" />
+      <div className="hidden h-5 w-px bg-tac-line sm:block" />
 
       <Chip className="font-semibold text-tac-self">
         {callsign}
@@ -66,11 +74,12 @@ export function StatusBar() {
 
       <div className="ml-auto flex items-center gap-3 overflow-x-auto">
         <Chip className={hasFix ? "text-tac-text" : "text-tac-danger"}>
-          <SatelliteDish className="h-3.5 w-3.5" />
+          <SatelliteDish className="h-3.5 w-3.5 shrink-0" />
           {hasFix ? (
             <span>
-              {formatLatLng(lat!, lng!, 4)}
-              {accuracy != null && <span className="text-tac-muted"> ±{Math.round(accuracy)}m</span>}
+              {/* Full coords on tablet+; just accuracy on a phone to save width. */}
+              <span className="hidden sm:inline">{formatLatLng(lat!, lng!, 4)} </span>
+              {accuracy != null && <span className="text-tac-muted">±{Math.round(accuracy)}m</span>}
             </span>
           ) : (
             "SIN GPS"

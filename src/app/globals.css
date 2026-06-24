@@ -29,10 +29,28 @@
 
 :root {
   color-scheme: dark;
+  /* Notch / home-indicator insets, exposed as tokens so chrome can frame the
+     map without colliding with device hardware. Fallback 0px on desktop. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  /* Status bar reserves its own height + the top inset; panels anchor to it. */
+  --statusbar-h: calc(2.75rem + var(--safe-top));
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch devices: enlarge Leaflet's default controls to real tap targets. */
+@media (pointer: coarse) {
+  .leaflet-bar a {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 20px;
+  }
 }
 
 html,
