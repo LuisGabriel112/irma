@@ -1,0 +1,13 @@
+{
+  "name": "irma-relay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "IRMA WebSocket relay — room-based fan-out of tactical packets",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

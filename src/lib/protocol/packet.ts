@@ -1,0 +1,209 @@
+import type { Affiliation, LatLng, MarkerType } from "@/lib/types";
+
+/**
+ * IRMA wire protocol.
+ *
+ * Packets are serialized to compact JSON (short keys) and framed as a single
+ * newline-terminated line. This keeps each frame inside a typical LoRa payload
+ * budget (SF7-SF9 ~ 222 bytes usable) while staying trivially debuggable and
+ * compatible with any serial/BLE LoRa bridge that forwards lines verbatim.
+ *
+ * For TAK interoperability, see `cot.ts` (Cursor-on-Target XML mapping).
+ */
+
+export const PROTOCOL_VERSION = 1;
+
+/** Conservative usable application payload per LoRa frame (bytes). */
+export const MAX_PAYLOAD_BYTES = 222;
+
+export interface PositionPacket {
+  kind: "position";
+  id: string; // sender peer id
+  callsign: string;
+  affiliation: Affiliation;
+  lat: number;
+  lng: number;
+  heading?: number;
+  speed?: number;
+  accuracy?: number;
+  battery?: number;
+  ts: number;
+}
+
+export interface MessagePacket {
+  kind: "message";
+  id: string; // message id
+  from: string;
+  to?: string; // undefined => broadcast
+  text: string;
+  ts: number;
+}
+
+export interface MarkerPacket {
+  kind: "marker";
+  id: string;
+  markerType: MarkerType;
+  affiliation: Affiliation;
+  label?: string;
+  coords: LatLng[];
+  color?: string;
+  symbol?: string;
+  remark?: string;
+  by: string;
+  ts: number;
+}
+
+export interface MarkerDeletePacket {
+  kind: "marker-delete";
+  id: string;
+  ts: number;
+}
+
+export interface PingPacket {
+  kind: "ping";
+  id: string;
+  from: string;
+  lat?: number;
+  lng?: number;
+  ts: number;
+}
+
+export type Packet =
+  | PositionPacket
+  | MessagePacket
+  | MarkerPacket
+  | MarkerDeletePacket
+  | PingPacket;
+
+// --- compact codec -------------------------------------------------------
+
+const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4 } as const;
+const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping"] as const;
+
+const AFF = { self: "s", friend: "f", neutral: "n", hostile: "h", unknown: "u" } as const;
+const AFF_REV: Record<string, Affiliation> = {
+  s: "self", f: "friend", n: "neutral", h: "hostile", u: "unknown",
+};
+
+const MT = { point: 0, line: 1, polygon: 2 } as const;
+const MT_REV = ["point", "line", "polygon"] as const;
+
+const r6 = (n: number) => Math.round(n * 1e6) / 1e6;
+const r5 = (n: number) => Math.round(n * 1e5) / 1e5;
+
+type Wire = Record<string, unknown>;
+
+function toWire(p: Packet): Wire {
+  switch (p.kind) {
+    case "position": {
+      const w: Wire = {
+        t: TYPE.position, i: p.id, c: p.callsign, a: AFF[p.affiliation],
+        la: r6(p.lat), ln: r6(p.lng), ts: p.ts,
+      };
+      if (p.heading != null) w.h = Math.round(p.heading);
+      if (p.speed != null) w.s = Math.round(p.speed * 10) / 10;
+      if (p.accuracy != null) w.ac = Math.round(p.accuracy);
+      if (p.battery != null) w.b = Math.round(p.battery);
+      return w;
+    }
+    case "message": {
+      const w: Wire = { t: TYPE.message, i: p.id, f: p.from, x: p.text, ts: p.ts };
+      if (p.to) w.o = p.to;
+      return w;
+    }
+    case "marker": {
+      const w: Wire = {
+        t: TYPE.marker, i: p.id, m: MT[p.markerType], a: AFF[p.affiliation],
+        co: p.coords.map((c) => [r5(c.lat), r5(c.lng)]), by: p.by, ts: p.ts,
+      };
+      if (p.label) w.l = p.label;
+      if (p.color) w.cl = p.color;
+      if (p.symbol) w.sy = p.symbol;
+      if (p.remark) w.r = p.remark;
+      return w;
+    }
+    case "marker-delete":
+      return { t: TYPE["marker-delete"], i: p.id, ts: p.ts };
+    case "ping": {
+      const w: Wire = { t: TYPE.ping, i: p.id, f: p.from, ts: p.ts };
+      if (p.lat != null) w.la = r6(p.lat);
+      if (p.lng != null) w.ln = r6(p.lng);
+      return w;
+    }
+  }
+}
+
+function fromWire(w: Wire): Packet | null {
+  const kind = TYPE_REV[w.t as number];
+  if (!kind) return null;
+  try {
+    switch (kind) {
+      case "position":
+        return {
+          kind, id: String(w.i), callsign: String(w.c),
+          affiliation: AFF_REV[w.a as string] ?? "unknown",
+          lat: Number(w.la), lng: Number(w.ln), ts: Number(w.ts),
+          heading: w.h != null ? Number(w.h) : undefined,
+          speed: w.s != null ? Number(w.s) : undefined,
+          accuracy: w.ac != null ? Number(w.ac) : undefined,
+          battery: w.b != null ? Number(w.b) : undefined,
+        };
+      case "message":
+        return {
+          kind, id: String(w.i), from: String(w.f), text: String(w.x),
+          to: w.o != null ? String(w.o) : undefined, ts: Number(w.ts),
+        };
+      case "marker":
+        return {
+          kind, id: String(w.i),
+          markerType: MT_REV[w.m as number] ?? "point",
+          affiliation: AFF_REV[w.a as string] ?? "unknown",
+          coords: (w.co as [number, number][]).map(([lat, lng]) => ({ lat, lng })),
+          label: w.l != null ? String(w.l) : undefined,
+          color: w.cl != null ? String(w.cl) : undefined,
+          symbol: w.sy != null ? String(w.sy) : undefined,
+          remark: w.r != null ? String(w.r) : undefined,
+          by: String(w.by), ts: Number(w.ts),
+        };
+      case "marker-delete":
+        return { kind, id: String(w.i), ts: Number(w.ts) };
+      case "ping":
+        return {
+          kind, id: String(w.i), from: String(w.f), ts: Number(w.ts),
+          lat: w.la != null ? Number(w.la) : undefined,
+          lng: w.ln != null ? Number(w.ln) : undefined,
+        };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function byteLength(s: string): number {
+  return new TextEncoder().encode(s).length;
+}
+
+/** Serialize a packet to a single wire line (no trailing newline). */
+export function encode(p: Packet): string {
+  return JSON.stringify(toWire(p));
+}
+
+/** Parse one wire line back into a packet, or null if malformed. */
+export function decode(line: string): Packet | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  let obj: Wire;
+  try {
+    obj = JSON.parse(trimmed) as Wire;
+  } catch {
+    return null;
+  }
+  if (typeof obj !== "object" || obj == null || typeof obj.t !== "number") return null;
+  return fromWire(obj);
+}
+
+/** True if the encoded packet fits within one LoRa frame. */
+export function fitsInFrame(p: Packet): boolean {
+  return byteLength(encode(p)) <= MAX_PAYLOAD_BYTES;
+}

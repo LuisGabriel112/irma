@@ -1,0 +1,14 @@
+# Render Blueprint for the IRMA relay (WebSocket fan-out).
+# Deploy: push this repo to GitHub, then on render.com → New → Blueprint → pick the repo.
+# Render terminates TLS, so the public endpoint is wss://irma-relay.onrender.com
+# Point the app at it: NEXT_PUBLIC_RELAY_URL=wss://irma-relay.onrender.com
+#   (or paste that URL into the Link panel's "Relay" field on each device).
+services:
+  - type: web
+    name: irma-relay
+    runtime: node
+    rootDir: relay
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.mjs
+    healthCheckPath: /

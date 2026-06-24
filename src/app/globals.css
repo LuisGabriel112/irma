@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+/*
+  IRMA tactical theme — dark, high-contrast, low chrome.
+  Cleaner than ATAK: restrained palette, one accent per state, generous spacing.
+*/
+@theme {
+  --color-tac-bg: #0a0e0d;
+  --color-tac-panel: #121716;
+  --color-tac-panel-2: #1a201e;
+  --color-tac-line: #2a322f;
+  --color-tac-text: #e6efe9;
+  --color-tac-muted: #7d8f86;
+
+  --color-tac-accent: #3ddc84;
+  --color-tac-accent-dim: #1f7a4d;
+  --color-tac-warn: #ffb020;
+  --color-tac-danger: #ff4d4d;
+  --color-tac-info: #38bdf8;
+  --color-tac-self: #3ddc84;
+  --color-tac-friend: #38bdf8;
+  --color-tac-hostile: #ff4d4d;
+  --color-tac-neutral: #cbd5cf;
+
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-tac: 0.5rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--color-tac-bg);
+  color: var(--color-tac-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin tactical scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-tac-line);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tac-muted);
+}
+
+/* MapLibre overrides — strip default light chrome */
+.maplibregl-ctrl-group {
+  background: var(--color-tac-panel) !important;
+  border: 1px solid var(--color-tac-line) !important;
+  box-shadow: none !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--color-tac-line) !important;
+}
+.maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: invert(1) hue-rotate(180deg);
+}
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 14, 13, 0.7) !important;
+  color: var(--color-tac-muted) !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--color-tac-muted) !important;
+}
+.maplibregl-popup-content {
+  background: var(--color-tac-panel) !important;
+  color: var(--color-tac-text) !important;
+  border: 1px solid var(--color-tac-line);
+  border-radius: var(--radius-tac);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+  padding: 0 !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--color-tac-panel) !important;
+  border-bottom-color: var(--color-tac-panel) !important;
+}
+.maplibregl-popup-close-button {
+  color: var(--color-tac-muted) !important;
+  font-size: 18px;
+  padding: 2px 8px;
+}
+
+@keyframes tac-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Self unit marker: heading arrow + pulse */
+.irma-self {
+  width: 26px;
+  height: 26px;
+  position: relative;
+  pointer-events: none;
+}
+.irma-self-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-tac-self);
+  animation: tac-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Reduced motion: drop the ambient pulse, keep the heading arrow static + visible. */
+@media (prefers-reduced-motion: reduce) {
+  .irma-self-pulse {
+    animation: none;
+    opacity: 0.25;
+    transform: scale(1);
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+.irma-self-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -60%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 18px solid var(--color-tac-self);
+  filter: drop-shadow(0 0 3px rgba(61, 220, 132, 0.8));
+}
+
+/* Map popups */
+.irma-pop {
+  padding: 8px 12px;
+  min-width: 150px;
+  font-size: 12px;
+}
+.irma-pop-h {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+}
+.irma-pop-r {
+  color: var(--color-tac-muted);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.irma-measure {
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-tac-warn);
+}
+
+/* --- Leaflet dark overrides --- */
+.leaflet-container {
+  background: var(--color-tac-bg);
+  font-family: inherit;
+  outline: none;
+}
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+.leaflet-control-zoom a,
+.leaflet-bar a {
+  background: var(--color-tac-panel);
+  color: var(--color-tac-text);
+  border-color: var(--color-tac-line) !important;
+}
+.leaflet-control-zoom a:hover,
+.leaflet-bar a:hover {
+  background: var(--color-tac-panel-2);
+  color: var(--color-tac-accent);
+}
+.leaflet-bar {
+  border: 1px solid var(--color-tac-line);
+  box-shadow: none;
+}
+.leaflet-control-attribution {
+  background: rgba(10, 14, 13, 0.7) !important;
+  color: var(--color-tac-muted) !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-tac-muted) !important;
+}
+.leaflet-control-scale-line {
+  background: rgba(10, 14, 13, 0.6);
+  color: var(--color-tac-muted);
+  border-color: var(--color-tac-line);
+  border-top: none;
+}
+
+/* Permanent unit/marker labels (transparent tooltip) */
+.leaflet-tooltip.irma-tip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #0a0e0d, 0 0 3px #0a0e0d;
+}
+.leaflet-tooltip.irma-tip::before {
+  display: none;
+}
+
+/* Popups */
+.leaflet-popup-content-wrapper {
+  background: var(--color-tac-panel);
+  color: var(--color-tac-text);
+  border: 1px solid var(--color-tac-line);
+  border-radius: var(--radius-tac);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup-content {
+  margin: 0;
+}
+.leaflet-popup-tip {
+  background: var(--color-tac-panel);
+  border: 1px solid var(--color-tac-line);
+}
+.leaflet-popup-close-button {
+  color: var(--color-tac-muted) !important;
+  padding: 6px 8px 0 0 !important;
+}
+.irma-measure-popup .leaflet-popup-content-wrapper {
+  background: var(--color-tac-panel);
+}
