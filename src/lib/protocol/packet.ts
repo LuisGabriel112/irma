@@ -1,4 +1,4 @@
-import type { Affiliation, AlertType, LatLng, MarkerType } from "@/lib/types";
+import type { Affiliation, AlertType, LatLng, MarkerType, MediaKind } from "@/lib/types";
 
 /**
  * IRMA wire protocol.
@@ -79,18 +79,39 @@ export interface AlertPacket {
   ts: number;
 }
 
+/**
+ * Chat attachment (image / voice clip). Far larger than a LoRa frame, so this
+ * only travels over the WebSocket relay; the LoRa links never see it.
+ */
+export interface MediaPacket {
+  kind: "media";
+  id: string;
+  from: string;
+  to?: string;
+  mediaKind: MediaKind;
+  mime: string;
+  data: string; // raw base64 (no data-URL prefix)
+  caption?: string;
+  dur?: number;
+  ts: number;
+}
+
 export type Packet =
   | PositionPacket
   | MessagePacket
   | MarkerPacket
   | MarkerDeletePacket
   | PingPacket
-  | AlertPacket;
+  | AlertPacket
+  | MediaPacket;
 
 // --- compact codec -------------------------------------------------------
 
-const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5 } as const;
-const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert"] as const;
+const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5, media: 6 } as const;
+const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert", "media"] as const;
+
+const MK = { image: 0, audio: 1 } as const;
+const MK_REV = ["image", "audio"] as const;
 
 const AFF = { self: "s", friend: "f", neutral: "n", hostile: "h", unknown: "u" } as const;
 const AFF_REV: Record<string, Affiliation> = {
@@ -151,6 +172,16 @@ function toWire(p: Packet): Wire {
         t: TYPE.alert, i: p.id, f: p.from, k: ALT[p.alertType],
         la: r6(p.lat), ln: r6(p.lng), ts: p.ts,
       };
+    case "media": {
+      const w: Wire = {
+        t: TYPE.media, i: p.id, f: p.from, mk: MK[p.mediaKind],
+        mm: p.mime, d: p.data, ts: p.ts,
+      };
+      if (p.to) w.o = p.to;
+      if (p.caption) w.x = p.caption;
+      if (p.dur != null) w.du = Math.round(p.dur * 10) / 10;
+      return w;
+    }
   }
 }
 
@@ -200,6 +231,16 @@ function fromWire(w: Wire): Packet | null {
           kind, id: String(w.i), from: String(w.f),
           alertType: ALT_REV[w.k as number] ?? "panic",
           lat: Number(w.la), lng: Number(w.ln), ts: Number(w.ts),
+        };
+      case "media":
+        return {
+          kind, id: String(w.i), from: String(w.f),
+          mediaKind: MK_REV[w.mk as number] ?? "image",
+          mime: String(w.mm), data: String(w.d),
+          to: w.o != null ? String(w.o) : undefined,
+          caption: w.x != null ? String(w.x) : undefined,
+          dur: w.du != null ? Number(w.du) : undefined,
+          ts: Number(w.ts),
         };
     }
   } catch {

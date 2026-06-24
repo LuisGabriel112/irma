@@ -57,11 +57,22 @@ export const ALERT_LABELS: Record<AlertType, string> = {
   contact: "CONTACTO",
 };
 
+export type MediaKind = "image" | "audio";
+
+/** An attachment on a chat message. Relay-only (too large for LoRa frames). */
+export interface ChatMedia {
+  kind: MediaKind;
+  data: string; // data URL: `data:<mime>;base64,<...>`
+  mime: string;
+  dur?: number; // audio length, seconds
+}
+
 export interface ChatMessage {
   id: string;
   from: string; // callsign
   to?: string; // callsign, or undefined => broadcast
   text: string;
+  media?: ChatMedia; // image / voice clip (relay transport only)
   ts: number;
   self?: boolean;
 }

@@ -19,7 +19,7 @@ import { WebSocketServer } from "ws";
 import { parse } from "node:url";
 
 const PORT = Number(process.env.PORT) || 1234;
-const MAX_FRAME = 64 * 1024; // drop absurd frames
+const MAX_FRAME = 1024 * 1024; // 1 MB — fits a compressed image / voice clip frame
 const rooms = new Map(); // room -> Set<WebSocket>
 
 // HTTP layer: health check + a friendly landing response. Everything that is not

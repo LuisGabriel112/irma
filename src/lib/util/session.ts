@@ -32,7 +32,12 @@ export function loadSession(): Session {
 export function saveSession(session: Session): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(session));
+    // Strip media payloads before persisting: a few images would blow the
+    // localStorage quota. Attachments are ephemeral; text history survives.
+    const messages = session.messages.map((m) =>
+      m.media ? { ...m, media: undefined } : m,
+    );
+    window.localStorage.setItem(KEY, JSON.stringify({ ...session, messages }));
   } catch {
     /* storage full / blocked — non-fatal */
   }

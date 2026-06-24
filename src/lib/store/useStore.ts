@@ -7,8 +7,10 @@ import type {
   LatLng,
   Marker,
   MarkerType,
+  MediaKind,
   Peer,
 } from "@/lib/types";
+import { base64Bytes, buildDataUrl, splitDataUrl } from "@/lib/util/media";
 import { decode, encode, type Packet } from "@/lib/protocol/packet";
 import { haversine } from "@/lib/geo/utils";
 import { TransportManager } from "@/lib/transport/manager";
@@ -111,6 +113,13 @@ export interface StoreState {
   // outbound
   broadcastPosition(): void;
   sendMessage(text: string, to?: string): void;
+  sendMedia(input: {
+    kind: MediaKind;
+    dataUrl: string;
+    dur?: number;
+    caption?: string;
+    to?: string;
+  }): void;
   placeMarker(input: {
     type: MarkerType;
     affiliation: Affiliation;
@@ -223,6 +232,20 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
         ts: p.ts || now(),
       };
       set((s) => ({ alerts: { ...s.alerts, [alert.id]: alert } }));
+      break;
+    }
+    case "media": {
+      if (p.to && p.to !== state.self.callsign) return; // not addressed to us
+      const msg: ChatMessage = {
+        id: p.id,
+        from: p.from,
+        to: p.to,
+        text: p.caption ?? "",
+        media: { kind: p.mediaKind, data: buildDataUrl(p.mime, p.data), mime: p.mime, dur: p.dur },
+        ts: p.ts || now(),
+        self: false,
+      };
+      set((s) => ({ messages: [...s.messages, msg].slice(-300), unread: s.unread + 1 }));
       break;
     }
   }
@@ -463,6 +486,49 @@ export const useStore = create<StoreState>()((set, get) => {
       void manager.send(
         encode({ kind: "message", id: msg.id, from: msg.from, to, text: body, ts: msg.ts }),
       );
+    },
+
+    sendMedia: (input) => {
+      const s = get().self;
+      const { mime, base64 } = splitDataUrl(input.dataUrl);
+      if (base64Bytes(base64) > 950_000) {
+        set((st) => ({
+          log: [stamp("Adjunto demasiado grande para el relay (máx ~700 KB)"), ...st.log].slice(0, 200),
+        }));
+        return;
+      }
+      const msg: ChatMessage = {
+        id: `${s.id}-${now()}-${Math.random().toString(36).slice(2, 6)}`,
+        from: s.callsign,
+        to: input.to,
+        text: input.caption ?? "",
+        media: { kind: input.kind, data: input.dataUrl, mime, dur: input.dur },
+        ts: now(),
+        self: true,
+      };
+      set((st) => ({ messages: [...st.messages, msg].slice(-300) }));
+
+      const conn = get().connection;
+      if (conn.kind === "websocket" && conn.state === "connected") {
+        void manager.send(
+          encode({
+            kind: "media",
+            id: msg.id,
+            from: msg.from,
+            to: input.to,
+            mediaKind: input.kind,
+            mime,
+            data: base64,
+            caption: input.caption,
+            dur: input.dur,
+            ts: msg.ts,
+          }),
+        );
+      } else {
+        set((st) => ({
+          log: [stamp("Adjunto local — conéctate por relay (internet) para enviarlo"), ...st.log].slice(0, 200),
+        }));
+      }
     },
 
     placeMarker: (input) => {
