@@ -48,6 +48,9 @@ export default function MapView() {
   const peersLayerRef = useRef<L.LayerGroup | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const measureLayerRef = useRef<L.LayerGroup | null>(null);
+  const draftLayerRef = useRef<L.LayerGroup | null>(null);
+  const navLayerRef = useRef<L.LayerGroup | null>(null);
+  const alertsLayerRef = useRef<L.LayerGroup | null>(null);
   const measureRef = useRef<LatLng[]>([]);
   const firstFixRef = useRef(false);
   const coarseFixWarnedRef = useRef(false);
@@ -55,6 +58,9 @@ export default function MapView() {
 
   const peers = useStore((s) => s.peers);
   const markers = useStore((s) => s.markers);
+  const alerts = useStore((s) => s.alerts);
+  const draft = useStore((s) => s.draft);
+  const navTargetId = useStore((s) => s.navTargetId);
   const selfLat = useStore((s) => s.self.lat);
   const selfLng = useStore((s) => s.self.lng);
   const selfHeading = useStore((s) => s.self.heading);
@@ -92,13 +98,20 @@ export default function MapView() {
     peersLayerRef.current = L.layerGroup().addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
     measureLayerRef.current = L.layerGroup().addTo(map);
+    navLayerRef.current = L.layerGroup().addTo(map);
+    alertsLayerRef.current = L.layerGroup().addTo(map);
+    draftLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("dragstart", () => useStore.getState().setFollowSelf(false));
     map.on("click", onMapClick);
+    map.on("mousemove", onMapMouseMove);
 
     pushSelf();
     pushPeers();
     pushMarkers();
+    pushDraft();
+    pushNav();
+    pushAlerts();
 
     setTimeout(() => map.invalidateSize(), 300);
     const staleTimer = setInterval(pushPeers, 5000);
@@ -115,6 +128,9 @@ export default function MapView() {
       peersLayerRef.current = null;
       markersLayerRef.current = null;
       measureLayerRef.current = null;
+      draftLayerRef.current = null;
+      navLayerRef.current = null;
+      alertsLayerRef.current = null;
       firstFixRef.current = false;
       coarseFixWarnedRef.current = false;
     };
@@ -244,6 +260,17 @@ export default function MapView() {
         }
         cm.bindPopup(popup);
         cm.addTo(layer);
+      } else if (m.type === "circle") {
+        const circle = L.circle([m.coords[0].lat, m.coords[0].lng], {
+          radius: m.radius ?? 0,
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.1,
+          dashArray: "4 3",
+        });
+        circle.bindPopup(popup);
+        circle.addTo(layer);
       } else {
         const latlngs = m.coords.map((c) => [c.lat, c.lng]) as [number, number][];
         const shape =
@@ -280,7 +307,102 @@ export default function MapView() {
       });
       return;
     }
+    if (st.tool === "draw-line" || st.tool === "draw-polygon" || st.tool === "draw-circle") {
+      // Circle is fully defined by 2 clicks (center, edge) — commit on the second.
+      if (st.tool === "draw-circle" && st.draft.length >= 1) {
+        st.addDraftPoint(at);
+        st.commitDraft();
+      } else {
+        st.addDraftPoint(at);
+      }
+      return;
+    }
     if (st.tool === "measure") handleMeasure(at);
+  }
+
+  // Live preview: rubber-band the draft to the cursor while drawing.
+  function onMapMouseMove(e: L.LeafletMouseEvent) {
+    const st = useStore.getState();
+    if (!st.tool.startsWith("draw-") || st.draft.length === 0) return;
+    pushDraft({ lat: e.latlng.lat, lng: e.latlng.lng });
+  }
+
+  // --- draft / nav / alert renderers -------------------------------------
+  const DRAW_COLOR = "#7dd3fc";
+
+  function pushDraft(cursor?: LatLng) {
+    const layer = draftLayerRef.current;
+    if (!layer || !mapRef.current) return;
+    layer.clearLayers();
+    const st = useStore.getState();
+    const pts = st.draft;
+    if (!st.tool.startsWith("draw-") || pts.length === 0) return;
+
+    for (const p of pts) {
+      L.circleMarker([p.lat, p.lng], {
+        radius: 4, color: DRAW_COLOR, weight: 1.5, fillColor: DRAW_COLOR, fillOpacity: 1,
+      }).addTo(layer);
+    }
+
+    if (st.tool === "draw-circle") {
+      const edge = cursor ?? pts[1];
+      if (edge) {
+        const radius = haversine(pts[0], edge);
+        L.circle([pts[0].lat, pts[0].lng], {
+          radius, color: DRAW_COLOR, weight: 2, fillColor: DRAW_COLOR, fillOpacity: 0.08, dashArray: "4 3",
+        }).addTo(layer);
+        L.popup({ closeButton: false, className: "irma-measure-popup" })
+          .setLatLng([edge.lat, edge.lng])
+          .setContent(`<div class="irma-measure">R ${formatDistance(radius)}</div>`)
+          .addTo(layer);
+      }
+      return;
+    }
+
+    const line = cursor ? [...pts, cursor] : pts;
+    const latlngs = line.map((p) => [p.lat, p.lng]) as [number, number][];
+    if (st.tool === "draw-polygon") {
+      L.polygon(latlngs, {
+        color: DRAW_COLOR, weight: 2, fillColor: DRAW_COLOR, fillOpacity: 0.1, dashArray: "4 3",
+      }).addTo(layer);
+    } else {
+      L.polyline(latlngs, { color: DRAW_COLOR, weight: 2, dashArray: "4 3" }).addTo(layer);
+    }
+  }
+
+  function pushNav() {
+    const layer = navLayerRef.current;
+    const map = mapRef.current;
+    if (!layer || !map) return;
+    layer.clearLayers();
+    const st = useStore.getState();
+    const id = st.navTargetId;
+    if (!id || st.self.lat == null || st.self.lng == null) return;
+    const from: LatLng = { lat: st.self.lat, lng: st.self.lng };
+    let to: LatLng | null = null;
+    if (st.peers[id]) to = { lat: st.peers[id].lat, lng: st.peers[id].lng };
+    else if (st.markers[id]) to = st.markers[id].coords[0];
+    if (!to) return;
+    L.polyline(
+      [[from.lat, from.lng], [to.lat, to.lng]] as [number, number][],
+      { color: "#f0abfc", weight: 2.5, opacity: 0.9, dashArray: "8 5" },
+    ).addTo(layer);
+  }
+
+  function pushAlerts() {
+    const layer = alertsLayerRef.current;
+    if (!layer || !mapRef.current) return;
+    layer.clearLayers();
+    for (const a of Object.values(useStore.getState().alerts)) {
+      const ring = L.circleMarker([a.lat, a.lng], {
+        radius: 14, color: "#ff4d4d", weight: 2, fillColor: "#ff4d4d", fillOpacity: 0.25,
+        className: "irma-alert-pulse",
+      });
+      ring.bindTooltip(`⚠ ${a.from}`, {
+        permanent: true, direction: "top", offset: [0, -10], className: "irma-tip", opacity: 1,
+      });
+      ring.addTo(layer);
+    }
   }
 
   function handleMeasure(at: LatLng) {
@@ -331,8 +453,25 @@ export default function MapView() {
 
   useEffect(() => {
     pushMarkers();
+    // nav line endpoint may live on a marker; keep it in sync
+    pushNav();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markers]);
+
+  useEffect(() => {
+    pushDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, tool]);
+
+  useEffect(() => {
+    pushAlerts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts]);
+
+  useEffect(() => {
+    pushNav();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navTargetId, selfLat, selfLng, peers]);
 
   useEffect(() => {
     const map = mapRef.current;

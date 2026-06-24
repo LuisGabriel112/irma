@@ -1,4 +1,4 @@
-import type { Affiliation, LatLng, MarkerType } from "@/lib/types";
+import type { Affiliation, AlertType, LatLng, MarkerType } from "@/lib/types";
 
 /**
  * IRMA wire protocol.
@@ -46,6 +46,7 @@ export interface MarkerPacket {
   affiliation: Affiliation;
   label?: string;
   coords: LatLng[];
+  radius?: number; // meters, circle only
   color?: string;
   symbol?: string;
   remark?: string;
@@ -68,25 +69,39 @@ export interface PingPacket {
   ts: number;
 }
 
+export interface AlertPacket {
+  kind: "alert";
+  id: string;
+  from: string;
+  alertType: AlertType;
+  lat: number;
+  lng: number;
+  ts: number;
+}
+
 export type Packet =
   | PositionPacket
   | MessagePacket
   | MarkerPacket
   | MarkerDeletePacket
-  | PingPacket;
+  | PingPacket
+  | AlertPacket;
 
 // --- compact codec -------------------------------------------------------
 
-const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4 } as const;
-const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping"] as const;
+const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5 } as const;
+const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert"] as const;
 
 const AFF = { self: "s", friend: "f", neutral: "n", hostile: "h", unknown: "u" } as const;
 const AFF_REV: Record<string, Affiliation> = {
   s: "self", f: "friend", n: "neutral", h: "hostile", u: "unknown",
 };
 
-const MT = { point: 0, line: 1, polygon: 2 } as const;
-const MT_REV = ["point", "line", "polygon"] as const;
+const MT = { point: 0, line: 1, polygon: 2, circle: 3 } as const;
+const MT_REV = ["point", "line", "polygon", "circle"] as const;
+
+const ALT = { panic: 0, medical: 1, contact: 2 } as const;
+const ALT_REV = ["panic", "medical", "contact"] as const;
 
 const r6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const r5 = (n: number) => Math.round(n * 1e5) / 1e5;
@@ -116,6 +131,7 @@ function toWire(p: Packet): Wire {
         t: TYPE.marker, i: p.id, m: MT[p.markerType], a: AFF[p.affiliation],
         co: p.coords.map((c) => [r5(c.lat), r5(c.lng)]), by: p.by, ts: p.ts,
       };
+      if (p.radius != null) w.rd = Math.round(p.radius);
       if (p.label) w.l = p.label;
       if (p.color) w.cl = p.color;
       if (p.symbol) w.sy = p.symbol;
@@ -130,6 +146,11 @@ function toWire(p: Packet): Wire {
       if (p.lng != null) w.ln = r6(p.lng);
       return w;
     }
+    case "alert":
+      return {
+        t: TYPE.alert, i: p.id, f: p.from, k: ALT[p.alertType],
+        la: r6(p.lat), ln: r6(p.lng), ts: p.ts,
+      };
   }
 }
 
@@ -159,6 +180,7 @@ function fromWire(w: Wire): Packet | null {
           markerType: MT_REV[w.m as number] ?? "point",
           affiliation: AFF_REV[w.a as string] ?? "unknown",
           coords: (w.co as [number, number][]).map(([lat, lng]) => ({ lat, lng })),
+          radius: w.rd != null ? Number(w.rd) : undefined,
           label: w.l != null ? String(w.l) : undefined,
           color: w.cl != null ? String(w.cl) : undefined,
           symbol: w.sy != null ? String(w.sy) : undefined,
@@ -172,6 +194,12 @@ function fromWire(w: Wire): Packet | null {
           kind, id: String(w.i), from: String(w.f), ts: Number(w.ts),
           lat: w.la != null ? Number(w.la) : undefined,
           lng: w.ln != null ? Number(w.ln) : undefined,
+        };
+      case "alert":
+        return {
+          kind, id: String(w.i), from: String(w.f),
+          alertType: ALT_REV[w.k as number] ?? "panic",
+          lat: Number(w.la), lng: Number(w.ln), ts: Number(w.ts),
         };
     }
   } catch {

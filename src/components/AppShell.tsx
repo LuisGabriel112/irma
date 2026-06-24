@@ -7,6 +7,7 @@ import { StatusBar } from "@/components/StatusBar";
 import { ToolDock } from "@/components/ToolDock";
 import { SidePanel } from "@/components/SidePanel";
 import { SetupGate } from "@/components/SetupGate";
+import { AlertBanner, DrawControls, NavHud } from "@/components/MapHud";
 
 // MapLibre touches `window` at import — load it browser-only.
 const MapView = dynamic(() => import("@/components/map/MapView"), {
@@ -64,6 +65,54 @@ export function AppShell() {
     return () => navigator.geolocation.clearWatch(id);
   }, [setSelfPosition]);
 
+  // Real compass heading from the device magnetometer. The desktop has no
+  // compass; phones do — this makes the own-position arrow point true even when
+  // stationary (GPS only reports course while moving). Throttled to ~5 Hz and a
+  // 3° threshold so we don't thrash the store. iOS 13+ needs a gesture-gated
+  // permission grant, so we wire that on the first user touch.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let last = 0;
+    let lastHeading = -999;
+    const onOrient = (e: DeviceOrientationEvent) => {
+      const ev = e as DeviceOrientationEvent & { webkitCompassHeading?: number };
+      const heading =
+        ev.webkitCompassHeading != null
+          ? ev.webkitCompassHeading // iOS: already true-north heading
+          : ev.alpha != null
+            ? (360 - ev.alpha) % 360 // others: alpha is counter-clockwise from north
+            : null;
+      if (heading == null) return;
+      const t = Date.now();
+      if (t - last < 200 || Math.abs(heading - lastHeading) < 3) return;
+      last = t;
+      lastHeading = heading;
+      useStore.setState((s) => ({ self: { ...s.self, heading } }));
+    };
+
+    type OrientCtor = { requestPermission?: () => Promise<"granted" | "denied"> };
+    const DOE = window.DeviceOrientationEvent as unknown as OrientCtor | undefined;
+    const add = () => window.addEventListener("deviceorientation", onOrient, true);
+
+    if (DOE?.requestPermission) {
+      // iOS: must ask after a user gesture.
+      const ask = () => {
+        DOE.requestPermission!().then((r) => r === "granted" && add()).catch(() => {});
+        window.removeEventListener("touchend", ask);
+        window.removeEventListener("click", ask);
+      };
+      window.addEventListener("touchend", ask, { once: true });
+      window.addEventListener("click", ask, { once: true });
+      return () => {
+        window.removeEventListener("touchend", ask);
+        window.removeEventListener("click", ask);
+        window.removeEventListener("deviceorientation", onOrient, true);
+      };
+    }
+    add();
+    return () => window.removeEventListener("deviceorientation", onOrient, true);
+  }, []);
+
   // Battery telemetry (best-effort; Chromium only)
   useEffect(() => {
     type BatteryLike = { level: number; addEventListener: (e: string, cb: () => void) => void };
@@ -111,6 +160,9 @@ export function AppShell() {
           <StatusBar />
           <ToolDock />
           <SidePanel />
+          <DrawControls />
+          <NavHud />
+          <AlertBanner />
           {!setupComplete && <SetupGate />}
         </>
       )}

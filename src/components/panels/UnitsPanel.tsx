@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Radio } from "lucide-react";
+import { Navigation, Radio } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState } from "@/components/ui";
+import { cn } from "@/lib/util/cn";
 import { AFFILIATION_LABELS, type Peer } from "@/lib/types";
 import { bearing, compass, formatDistance, formatRelTime, haversine } from "@/lib/geo/utils";
 
@@ -27,35 +28,54 @@ function PeerRow({
     return () => clearInterval(t);
   }, []);
 
+  const navTargetId = useStore((s) => s.navTargetId);
+  const setNavTarget = useStore((s) => s.setNavTarget);
+  const isNav = navTargetId === peer.id;
+
   const dist = here ? haversine(here, peer) : null;
   const brg = here ? bearing(here, peer) : null;
   const stale = Date.now() - peer.lastSeen > 30_000;
 
   return (
-    <button
-      type="button"
-      onClick={() => onFocus(peer.id)}
-      className="flex items-center gap-2.5 border-b border-tac-line/60 px-3 py-2.5 text-left hover:bg-tac-panel-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tac-accent"
-    >
-      <Dot affiliation={peer.affiliation} className={stale ? "opacity-40" : ""} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-mono text-sm font-semibold text-tac-text">
-            {peer.callsign}
-          </span>
-          <span className="text-[10px] uppercase tracking-wide text-tac-muted">
-            {AFFILIATION_LABELS[peer.affiliation]}
-          </span>
+    <div className="flex items-stretch border-b border-tac-line/60 hover:bg-tac-panel-2">
+      <button
+        type="button"
+        onClick={() => onFocus(peer.id)}
+        className="flex flex-1 items-center gap-2.5 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tac-accent"
+      >
+        <Dot affiliation={peer.affiliation} className={stale ? "opacity-40" : ""} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-mono text-sm font-semibold text-tac-text">
+              {peer.callsign}
+            </span>
+            <span className="text-[10px] uppercase tracking-wide text-tac-muted">
+              {AFFILIATION_LABELS[peer.affiliation]}
+            </span>
+          </div>
+          <div className="text-[11px] tabular-nums text-tac-muted">
+            {dist != null ? `${formatDistance(dist)} · ${compass(brg!)} ${Math.round(brg!)}°` : "distancia n/d"}
+          </div>
         </div>
-        <div className="text-[11px] tabular-nums text-tac-muted">
-          {dist != null ? `${formatDistance(dist)} · ${compass(brg!)} ${Math.round(brg!)}°` : "distancia n/d"}
+        <div className="text-right text-[11px] tabular-nums text-tac-muted">
+          <div className={stale ? "text-tac-warn" : ""}>{formatRelTime(peer.lastSeen)}</div>
+          {peer.battery != null && <div>{peer.battery}%</div>}
         </div>
-      </div>
-      <div className="text-right text-[11px] tabular-nums text-tac-muted">
-        <div className={stale ? "text-tac-warn" : ""}>{formatRelTime(peer.lastSeen)}</div>
-        {peer.battery != null && <div>{peer.battery}%</div>}
-      </div>
-    </button>
+      </button>
+      <button
+        type="button"
+        onClick={() => setNavTarget(isNav ? null : peer.id)}
+        title={isNav ? "Cancelar navegación" : "Navegar a esta unidad"}
+        aria-label={isNav ? "Cancelar navegación" : "Navegar a esta unidad"}
+        aria-pressed={isNav}
+        className={cn(
+          "flex w-11 shrink-0 items-center justify-center border-l border-tac-line/60 transition-colors",
+          isNav ? "text-fuchsia-300" : "text-tac-muted hover:text-tac-text",
+        )}
+      >
+        <Navigation className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 

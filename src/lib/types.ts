@@ -22,7 +22,7 @@ export interface Peer {
   lastSeen: number; // epoch ms
 }
 
-export type MarkerType = "point" | "line" | "polygon";
+export type MarkerType = "point" | "line" | "polygon" | "circle";
 
 /** A drawn/placed graphic on the map, shareable over the mesh. */
 export interface Marker {
@@ -30,13 +30,32 @@ export interface Marker {
   type: MarkerType;
   affiliation: Affiliation;
   label?: string;
-  coords: LatLng[]; // length 1 for point
+  coords: LatLng[]; // length 1 for point/circle (center), >=2 for line/polygon
+  radius?: number; // meters, circle only
   color?: string; // hex; defaults derived from affiliation
   symbol?: string; // icon key for points
   remark?: string;
   createdBy: string; // callsign
   createdAt: number;
 }
+
+export type AlertType = "panic" | "medical" | "contact";
+
+/** A distress/alert broadcast — flashes on every teammate's map until cleared. */
+export interface Alert {
+  id: string;
+  from: string; // callsign
+  type: AlertType;
+  lat: number;
+  lng: number;
+  ts: number;
+}
+
+export const ALERT_LABELS: Record<AlertType, string> = {
+  panic: "PÁNICO",
+  medical: "MÉDICO",
+  contact: "CONTACTO",
+};
 
 export interface ChatMessage {
   id: string;

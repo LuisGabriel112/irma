@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type {
   Affiliation,
+  Alert,
+  AlertType,
   ChatMessage,
   LatLng,
   Marker,
@@ -8,6 +10,7 @@ import type {
   Peer,
 } from "@/lib/types";
 import { decode, encode, type Packet } from "@/lib/protocol/packet";
+import { haversine } from "@/lib/geo/utils";
 import { TransportManager } from "@/lib/transport/manager";
 import type {
   ConnectOptions,
@@ -23,6 +26,9 @@ export type Tool =
   | "marker-hostile"
   | "marker-neutral"
   | "marker-point"
+  | "draw-line"
+  | "draw-polygon"
+  | "draw-circle"
   | "measure"
   | "set-self";
 
@@ -53,12 +59,15 @@ export interface StoreState {
   peers: Record<string, Peer>;
   markers: Record<string, Marker>;
   messages: ChatMessage[];
+  alerts: Record<string, Alert>; // active distress beacons (own + received)
   unread: number;
   connection: Connection;
   log: string[];
   tool: Tool;
   followSelf: boolean;
   flyToId: string | null; // map watches this to recenter on a unit/marker
+  navTargetId: string | null; // bloodhound: peer/marker id to navigate toward
+  draft: LatLng[]; // in-progress drawing vertices (line/polygon/circle)
   setupComplete: boolean; // first-run identity setup done — gates the map
 
   // identity
@@ -81,6 +90,7 @@ export interface StoreState {
   setTool(tool: Tool): void;
   setFollowSelf(v: boolean): void;
   requestFlyTo(id: string): void;
+  setNavTarget(id: string | null): void;
   markRead(): void;
 
   // gps / self
@@ -105,11 +115,22 @@ export interface StoreState {
     type: MarkerType;
     affiliation: Affiliation;
     coords: LatLng[];
+    radius?: number;
     label?: string;
     remark?: string;
     color?: string;
   }): Marker;
   removeMarker(id: string): void;
+
+  // drawing (line/polygon/circle)
+  addDraftPoint(p: LatLng): void;
+  undoDraftPoint(): void;
+  clearDraft(): void;
+  commitDraft(): void;
+
+  // alerts (distress beacons)
+  raiseAlert(type: AlertType): void;
+  clearAlert(id: string): void;
 
   // inbound
   ingestLine(line: string): void;
@@ -192,6 +213,18 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
       set((s) => ({ messages: [...s.messages, note].slice(-300), unread: s.unread + 1 }));
       break;
     }
+    case "alert": {
+      const alert: Alert = {
+        id: p.id,
+        from: p.from,
+        type: p.alertType,
+        lat: p.lat,
+        lng: p.lng,
+        ts: p.ts || now(),
+      };
+      set((s) => ({ alerts: { ...s.alerts, [alert.id]: alert } }));
+      break;
+    }
   }
 }
 
@@ -222,12 +255,15 @@ export const useStore = create<StoreState>()((set, get) => {
     peers: {},
     markers: {},
     messages: [],
+    alerts: {},
     unread: 0,
     connection: { state: "disconnected" },
     log: [],
     tool: "pan",
     followSelf: true,
     flyToId: null,
+    navTargetId: null,
+    draft: [],
     setupComplete: false,
 
     persistIdentity: () => {
@@ -324,16 +360,19 @@ export const useStore = create<StoreState>()((set, get) => {
         peers: {},
         markers: {},
         messages: [],
+        alerts: {},
         unread: 0,
         log: [],
         connection: { state: "disconnected" },
+        navTargetId: null,
         setupComplete: false,
       });
     },
 
-    setTool: (tool) => set({ tool }),
+    setTool: (tool) => set({ tool, draft: [] }),
     setFollowSelf: (followSelf) => set({ followSelf }),
     requestFlyTo: (id) => set({ flyToId: `${id}:${now()}` }),
+    setNavTarget: (navTargetId) => set({ navTargetId }),
     markRead: () => set({ unread: 0 }),
 
     setSelfPosition: (p) =>
@@ -434,6 +473,7 @@ export const useStore = create<StoreState>()((set, get) => {
         affiliation: input.affiliation,
         label: input.label,
         coords: input.coords,
+        radius: input.radius,
         color: input.color,
         remark: input.remark,
         createdBy: s.callsign,
@@ -448,6 +488,7 @@ export const useStore = create<StoreState>()((set, get) => {
           affiliation: marker.affiliation,
           label: marker.label,
           coords: marker.coords,
+          radius: marker.radius,
           color: marker.color,
           remark: marker.remark,
           by: marker.createdBy,
@@ -456,6 +497,75 @@ export const useStore = create<StoreState>()((set, get) => {
       );
       return marker;
     },
+
+    addDraftPoint: (p) => set((s) => ({ draft: [...s.draft, p] })),
+    undoDraftPoint: () => set((s) => ({ draft: s.draft.slice(0, -1) })),
+    clearDraft: () => set({ draft: [] }),
+    commitDraft: () => {
+      const { tool, draft } = get();
+      const DRAW_COLOR = "#7dd3fc"; // light blue — own tactical graphics
+      if (tool === "draw-circle") {
+        if (draft.length < 2) return;
+        get().placeMarker({
+          type: "circle",
+          affiliation: "friend",
+          coords: [draft[0]],
+          radius: haversine(draft[0], draft[1]),
+          color: DRAW_COLOR,
+        });
+      } else if (tool === "draw-line" || tool === "draw-polygon") {
+        const min = tool === "draw-polygon" ? 3 : 2;
+        if (draft.length < min) return;
+        get().placeMarker({
+          type: tool === "draw-polygon" ? "polygon" : "line",
+          affiliation: "friend",
+          coords: draft,
+          color: DRAW_COLOR,
+        });
+      }
+      set({ draft: [] });
+    },
+
+    raiseAlert: (type) => {
+      const s = get().self;
+      if (s.lat == null || s.lng == null) {
+        set((st) => ({
+          log: [stamp("No se puede emitir alerta sin posición"), ...st.log].slice(0, 200),
+        }));
+        return;
+      }
+      const alert: Alert = {
+        id: `${s.id}-al-${now()}`,
+        from: s.callsign,
+        type,
+        lat: s.lat,
+        lng: s.lng,
+        ts: now(),
+      };
+      set((st) => ({
+        alerts: { ...st.alerts, [alert.id]: alert },
+        log: [stamp(`⚠ Alerta ${type.toUpperCase()} emitida`), ...st.log].slice(0, 200),
+      }));
+      void manager.send(
+        encode({
+          kind: "alert",
+          id: alert.id,
+          from: alert.from,
+          alertType: type,
+          lat: alert.lat,
+          lng: alert.lng,
+          ts: alert.ts,
+        }),
+      );
+    },
+
+    clearAlert: (id) =>
+      set((s) => {
+        if (!s.alerts[id]) return {};
+        const next = { ...s.alerts };
+        delete next[id];
+        return { alerts: next };
+      }),
 
     removeMarker: (id) => {
       set((s) => {
