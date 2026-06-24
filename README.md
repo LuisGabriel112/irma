@@ -1,86 +1,114 @@
-# IRMA — Tactical Situational Awareness (PWA)
+# IRMA — Conciencia Situacional Táctica (PWA)
 
-An **ATAK-class** team-awareness platform, rebuilt as a clean, installable **web app (PWA)** with a first-class **LoRa mesh** transport. Live unit tracking, tactical graphics, and chat — over cellular, Wi‑Fi, or off-grid LoRa radio — with a deliberately uncluttered tactical UI.
+Plataforma de conciencia situacional de equipo **tipo ATAK**, reconstruida como **app web instalable (PWA)** con transporte de **malla LoRa** de primera clase. Seguimiento de unidades en vivo, gráficos tácticos y chat — sobre celular, Wi‑Fi o radio LoRa fuera de red — con una interfaz táctica deliberadamente despejada.
 
-> Civilian situational awareness for SAR, event safety, expeditions, and field teams. Benchmark target: ATAK-CIV, minus the clutter.
+> Conciencia situacional civil para SAR, seguridad de eventos, expediciones y equipos de campo. Objetivo de referencia: ATAK-CIV, menos el desorden.
 
 ---
 
-## Features
+## Características
 
-- **Live map** (MapLibre GL, dark vector basemap) with own-position arrow + GPS accuracy ring.
-- **Team tracking** — peers rendered by affiliation (friend / hostile / neutral / unknown), with range, bearing, last-seen and battery.
-- **Tactical graphics** — drop friendly/hostile/neutral markers and waypoints; range-measure tool. Graphics broadcast to the whole net.
-- **Net chat** — broadcast messaging across the mesh.
-- **Pluggable transport** — one app, three links:
-  - **Simulated mesh** (no hardware — demo roster, on by default)
-  - **LoRa over USB serial** (Web Serial)
-  - **LoRa over Bluetooth LE** (Web Bluetooth, Nordic UART Service)
-- **CoT interop** — Cursor-on-Target XML mapping for bridging to ATAK / WinTAK / TAK Server.
-- **Offline-first PWA** — installable, with app-shell + map-tile caching for use without connectivity.
+- **Mapa en vivo** (Leaflet, tiles raster oscuros CARTO) con flecha de posición propia + anillo de precisión GPS. Funciona en cualquier entorno, incluso VMs/escritorios remotos sin WebGL.
+- **Seguimiento de equipo** — pares renderizados por afiliación (aliado / hostil / neutral / desconocido), con rango, rumbo, último visto y batería.
+- **Gráficos tácticos** — coloca marcadores (aliado/hostil/neutral) y puntos de ruta; dibuja **líneas, polígonos y círculos**; herramienta de medición rango/rumbo. Los gráficos se difunden a toda la red.
+- **Alertas de emergencia** — botón de **pánico** de un toque que transmite tu posición y parpadea en el mapa de todo el equipo, con aviso sonoro.
+- **Navegación a objetivo** — selecciona una unidad o marcador y obtén distancia + rumbo en vivo (bloodhound), con la flecha de posición propia orientada por la **brújula real del dispositivo**.
+- **Chat de red** — mensajería de difusión por la malla.
+- **Transporte conectable** — una app, varios enlaces:
+  - **Malla simulada** (sin hardware — roster demo)
+  - **Relay WebSocket** (amigos por internet, salas compartidas)
+  - **LoRa por USB serial** (Web Serial)
+  - **LoRa por Bluetooth LE** (Web Bluetooth, Nordic UART Service)
+- **Interop CoT** — mapeo XML Cursor-on-Target para puentear con ATAK / WinTAK / TAK Server.
+- **PWA offline-first** — instalable, con caché de app-shell + tiles de mapa para uso sin conectividad.
 
 ## Stack
 
-Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · MapLibre GL · Zustand. Basemap tiles by [OpenFreeMap](https://openfreemap.org) (no API key).
+Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · **Leaflet** · Zustand. Tiles base por [CARTO](https://carto.com/attributions) (sin API key).
 
 ---
 
-## Quick start
+## Inicio rápido
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
 ```
 
-The simulated mesh auto-connects so the map is alive immediately. Allow location access to see your own position; otherwise the map opens at a default center.
+Permite el acceso a la ubicación para ver tu posición; si no, el mapa abre en un centro por defecto (Veracruz). Conecta un transporte desde el panel **Enlace** para ver tráfico.
 
 ```bash
-npm run build && npm start   # production (service worker / offline active)
+npm run build && npm start   # producción (service worker / offline activo)
 ```
 
-> **Browser support for LoRa:** Web Serial and Web Bluetooth require a Chromium browser (Chrome/Edge, desktop or Android) served over **HTTPS or localhost**. The app, map, and simulated mesh work in any modern browser.
+### Acceso desde el celular (GPS real)
+
+`navigator.geolocation` requiere **contexto seguro** (HTTPS o localhost). Para usar el GPS real de un teléfono en tu red local:
+
+```bash
+npm run dev:lan      # next dev --experimental-https -H 0.0.0.0
+```
+
+Abre `https://<ip-LAN-de-tu-PC>:3000` en el teléfono (misma Wi‑Fi), acepta el certificado autofirmado y permite la ubicación. Web Serial / Web Bluetooth requieren un navegador Chromium (Chrome/Edge, escritorio o Android) sobre **HTTPS o localhost**.
 
 ---
 
-## Using it
+## Uso
 
-| Tool (left dock) | Action |
+| Herramienta | Acción |
 | --- | --- |
-| Hand | Pan / select (click units & graphics for details) |
-| Shield / Skull / Square | Place friendly / hostile / neutral graphic at click |
-| Pin | Drop a numbered waypoint |
-| Ruler | Range + bearing between two clicks |
-| Locate | Recenter & follow own position |
+| Mano | Mover / seleccionar (clic en unidades y gráficos para detalle) |
+| Marcadores ▾ | Colocar marcador aliado / hostil / neutral / punto de ruta |
+| Dibujar ▾ | Trazar línea / polígono / círculo |
+| Regla | Rango + rumbo entre dos clics |
+| Fijar posición | Toca el mapa para fijar tu ubicación a mano |
+| Centrar | Recentrar y seguir tu posición |
+| Sirena | Emitir alerta de pánico a la sala |
 
-Right panel tabs: **Units** (roster, click to fly-to), **Chat**, **Graphics** (list/delete), **Link** (set callsign/team, choose + connect a transport, view link log).
+Pestañas del panel derecho: **Unidades** (roster, clic para volar; botón de navegar por unidad), **Chat**, **Gráficos** (lista/borrar), **Enlace** (callsign/equipo, elegir + conectar transporte, registro del enlace).
 
 ---
 
-## LoRa hardware bridge
+## Multi-dispositivo por internet (relay)
 
-The browser cannot drive a LoRa radio directly. IRMA talks to a small **radio bridge** — any LoRa dev board (Heltec/TTGO/LilyGO, RAK, or a Meshtastic-class node) that relays **newline-delimited frames** between its USB/BLE serial port and the LoRa PHY.
+El transporte **WebSocket** difunde paquetes entre todos los clientes de una misma **sala**. Levanta el relay incluido o despliégalo en la nube:
 
-### Wire protocol
+```bash
+npm run relay        # escucha en :1234 (o $PORT)
+```
 
-One packet per line: compact JSON, sized to fit a single LoRa frame (≤ **222 bytes**, SF7–SF9). Short keys keep it on-air-cheap; `t` is the type code.
+El relay es un fan-out por sala agnóstico al formato (`relay/server.mjs`). Para producción, despliégalo en cualquier host con proceso de larga vida + WebSocket (Render, Railway, Fly) y apunta la app con `NEXT_PUBLIC_RELAY_URL=wss://tu-relay`. Incluye `render.yaml` (Blueprint) y `relay/Dockerfile`.
+
+Comparte la **URL** + el **código de sala** con tu equipo: todos en la misma sala se ven en el mapa, desde cualquier red.
+
+---
+
+## Puente de radio LoRa
+
+El navegador no puede manejar una radio LoRa directamente. IRMA habla con un pequeño **puente de radio** — cualquier placa LoRa (Heltec/TTGO/LilyGO, RAK, o un nodo tipo Meshtastic) que retransmita **tramas delimitadas por salto de línea** entre su puerto USB/BLE y el PHY LoRa.
+
+### Protocolo de cable
+
+Un paquete por línea: JSON compacto, dimensionado para caber en una sola trama LoRa (≤ **222 bytes**, SF7–SF9). Claves cortas para abaratar el aire; `t` es el código de tipo.
 
 ```
 {"t":0,"i":"a1b2","c":"RAVEN-1","a":"s","la":19.4326,"ln":-99.1332,"h":270,"b":88,"ts":1718480000000}
 ```
 
-| `t` | kind | key fields |
+| `t` | tipo | campos clave |
 | --- | --- | --- |
-| 0 | position | `i` id, `c` callsign, `a` affiliation, `la`/`ln` lat/lng, `h` heading, `s` speed, `ac` accuracy, `b` battery |
-| 1 | message | `i` id, `f` from, `o` to (omit = broadcast), `x` text |
-| 2 | marker | `i` id, `m` type, `a` aff, `co` coords, `l` label, `r` remark, `by` author |
-| 3 | marker-delete | `i` id |
-| 4 | ping | `i` id, `f` from, `la`/`ln` |
+| 0 | posición | `i` id, `c` callsign, `a` afiliación, `la`/`ln` lat/lng, `h` rumbo, `s` velocidad, `ac` precisión, `b` batería |
+| 1 | mensaje | `i` id, `f` de, `o` a (omitir = difusión), `x` texto |
+| 2 | marcador | `i` id, `m` tipo, `a` afiliación, `co` coords, `rd` radio (círculo), `l` etiqueta, `r` nota, `by` autor |
+| 3 | borrar-marcador | `i` id |
+| 4 | ping | `i` id, `f` de, `la`/`ln` |
+| 5 | alerta | `i` id, `f` de, `k` tipo (pánico/médico/contacto), `la`/`ln` |
 
-Affiliation codes: `s` self · `f` friend · `n` neutral · `h` hostile · `u` unknown. Implementation: [`src/lib/protocol/packet.ts`](src/lib/protocol/packet.ts).
+Códigos de afiliación: `s` propio · `f` aliado · `n` neutral · `h` hostil · `u` desconocido. Implementación: [`src/lib/protocol/packet.ts`](src/lib/protocol/packet.ts).
 
-### Reference firmware (Arduino, serial ⇄ LoRa)
+### Firmware de referencia (Arduino, serial ⇄ LoRa)
 
-Minimal bridge using the [`LoRa`](https://github.com/sandeepmistry/arduino-LoRa) library on an SX127x board. It forwards each USB-serial line to the radio and prints each received frame back as a line — exactly what the Web Serial transport expects.
+Puente mínimo con la librería [`LoRa`](https://github.com/sandeepmistry/arduino-LoRa) en una placa SX127x. Reenvía cada línea del serial USB a la radio e imprime cada trama recibida como línea — justo lo que espera el transporte Web Serial.
 
 ```cpp
 #include <SPI.h>
@@ -88,63 +116,65 @@ Minimal bridge using the [`LoRa`](https://github.com/sandeepmistry/arduino-LoRa)
 
 void setup() {
   Serial.begin(115200);
-  LoRa.setPins(/*SS*/18, /*RST*/14, /*DIO0*/26);   // adjust to your board
+  LoRa.setPins(/*SS*/18, /*RST*/14, /*DIO0*/26);   // ajusta a tu placa
   if (!LoRa.begin(915E6)) { Serial.println("{\"t\":4,\"i\":\"radio-fail\"}"); while (1); }
   LoRa.setSpreadingFactor(9);
 }
 
 void loop() {
-  // USB -> LoRa: relay one newline-terminated frame
+  // USB -> LoRa: retransmite una trama terminada en salto de línea
   static String tx;
   while (Serial.available()) {
     char c = Serial.read();
     if (c == '\n') { LoRa.beginPacket(); LoRa.print(tx); LoRa.endPacket(); tx = ""; }
     else if (c != '\r') tx += c;
   }
-  // LoRa -> USB: emit a received frame as a line
+  // LoRa -> USB: emite una trama recibida como línea
   int sz = LoRa.parsePacket();
   if (sz) { String rx; while (LoRa.available()) rx += (char)LoRa.read(); Serial.println(rx); }
 }
 ```
 
-**Bluetooth bridge:** expose the same line stream over the **Nordic UART Service** (`6e400001-…`); IRMA's BLE transport writes to the RX characteristic and subscribes to TX. Meshtastic devices already speak BLE — wrap their text-message channel with the same framing to bridge IRMA traffic onto an existing Meshtastic mesh.
+**Puente Bluetooth:** expón el mismo flujo de líneas sobre el **Nordic UART Service** (`6e400001-…`); el transporte BLE de IRMA escribe en la característica RX y se suscribe a TX. Los dispositivos Meshtastic ya hablan BLE — envuelve su canal de mensajes de texto con el mismo marco para puentear el tráfico de IRMA a una malla Meshtastic existente.
 
 ---
 
-## Architecture
+## Arquitectura
 
 ```
 src/
   lib/
-    protocol/   packet.ts (compact codec, LoRa MTU guard) · cot.ts (CoT XML interop)
-    transport/  Transport interface + base framing
-                ├─ simulated.ts  (in-app demo mesh)
+    protocol/   packet.ts (códec compacto, guarda de MTU LoRa) · cot.ts (interop CoT XML)
+    transport/  interfaz Transport + framing base
+                ├─ simulated.ts  (malla demo en la app)
+                ├─ websocket.ts  (relay por internet, salas)
                 ├─ serial.ts     (Web Serial)
                 ├─ bluetooth.ts  (Web Bluetooth / NUS)
-                └─ manager.ts    (active-link lifecycle)
-    store/      useStore.ts (Zustand: self, peers, markers, messages, link)
-    geo/        haversine, bearing, formatting, projection
+                └─ manager.ts    (ciclo de vida del enlace activo)
+    store/      useStore.ts (Zustand: propio, pares, marcadores, mensajes, alertas, enlace)
+    geo/        haversine, rumbo, formateo, proyección
   components/
-    map/MapView.tsx   (MapLibre layers, interaction, popups)
+    map/MapView.tsx   (capas Leaflet, interacción, dibujo, popups)
+    MapHud.tsx        (controles de dibujo, HUD de navegación, banner de alertas)
     StatusBar · ToolDock · SidePanel · panels/{Units,Chat,Markers,Link}
-    AppShell.tsx      (GPS watch, position beacon, SW registration)
+    AppShell.tsx      (watch GPS, brújula, beacon de posición, registro SW)
 ```
 
-The **Transport** abstraction is the key design choice: the app sends/receives `Packet`s over *any* link. Swapping LoRa for a future WebSocket relay or direct Meshtastic protobuf link is a single new `Transport` implementation — no UI or state changes.
+La abstracción **Transport** es la decisión de diseño clave: la app envía/recibe `Packet`s sobre *cualquier* enlace. Cambiar LoRa por un relay WebSocket o un enlace Meshtastic protobuf directo es una sola implementación nueva de `Transport` — sin cambios de UI ni estado.
 
 ## Offline / PWA
 
-Installable (manifest + icons). The service worker ([`public/sw.js`](public/sw.js), production only) network-first caches the app shell and cache-first caches map tiles/glyphs, so a previously viewed area stays available off-grid.
+Instalable (manifest + iconos). El service worker ([`public/sw.js`](public/sw.js), solo producción) cachea el app-shell con estrategia network-first y los tiles/glyphs con cache-first, así un área ya vista queda disponible fuera de red.
 
-## Roadmap
+## Hoja de ruta
 
-- Native Meshtastic protobuf transport (direct, no custom firmware)
-- Polyline / polygon / circle drawing + freehand
-- MGRS grid & coordinate entry
-- Persistent offline tile packs (MBTiles import)
-- WebSocket relay transport for online teams + TAK Server bridge
-- E2E packet encryption (per-team keys)
+- Transporte Meshtastic protobuf nativo (directo, sin firmware custom)
+- Cifrado E2E de paquetes (claves por equipo)
+- Cuadrícula MGRS y entrada de coordenadas
+- Paquetes de tiles offline (importación MBTiles)
+- Rastros (breadcrumbs) e historial de unidades
+- Geofencing y alertas de zona
 
 ---
 
-*Educational / civilian situational-awareness project. Not affiliated with TAK Product Center or the U.S. Government.*
+*Proyecto educativo / civil de conciencia situacional. No afiliado al TAK Product Center ni al Gobierno de EE. UU.*
