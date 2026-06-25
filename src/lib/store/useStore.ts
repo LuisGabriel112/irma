@@ -75,6 +75,7 @@ export interface StoreState {
 
   // live video (WebRTC, relay-only) — all ephemeral, never persisted
   videoBroadcasting: boolean; // own camera is live to the mesh
+  localStream: MediaStream | null; // own camera (self preview)
   watching: string[]; // peer ids whose camera we want to see
   remoteStreams: Record<string, MediaStream>; // peerId -> inbound media
 
@@ -321,6 +322,7 @@ export const useStore = create<StoreState>()((set, get) => {
     draft: [],
     setupComplete: false,
     videoBroadcasting: false,
+    localStream: null,
     watching: [],
     remoteStreams: {},
 
@@ -429,6 +431,7 @@ export const useStore = create<StoreState>()((set, get) => {
         navTargetId: null,
         setupComplete: false,
         videoBroadcasting: false,
+        localStream: null,
         watching: [],
         remoteStreams: {},
       });
@@ -495,6 +498,7 @@ export const useStore = create<StoreState>()((set, get) => {
         peers: {},
         connection: { state: "disconnected" },
         videoBroadcasting: false,
+        localStream: null,
         watching: [],
         remoteStreams: {},
       });
@@ -653,9 +657,10 @@ export const useStore = create<StoreState>()((set, get) => {
       }
       try {
         const targets = Object.keys(get().peers);
-        await mesh.startBroadcast(targets);
+        const stream = await mesh.startBroadcast(targets);
         set((s) => ({
           videoBroadcasting: true,
+          localStream: stream,
           log: [stamp("Cámara en vivo emitiendo a la malla"), ...s.log].slice(0, 200),
         }));
       } catch (e) {
@@ -666,7 +671,7 @@ export const useStore = create<StoreState>()((set, get) => {
     },
     stopVideo: () => {
       mesh.stopBroadcast();
-      set({ videoBroadcasting: false });
+      set({ videoBroadcasting: false, localStream: null });
     },
     watchPeer: (peerId) => {
       mesh.watch(peerId);
