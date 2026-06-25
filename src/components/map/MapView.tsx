@@ -10,6 +10,7 @@ import {
   type LatLng,
 } from "@/lib/types";
 import { formatDistance, formatLatLng, formatRelTime, haversine } from "@/lib/geo/utils";
+import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
 
 /**
  * Leaflet renderer. Raster tiles are plain <img> elements (no WebGL), so the
@@ -55,6 +56,7 @@ export default function MapView() {
   const firstFixRef = useRef(false);
   const coarseFixWarnedRef = useRef(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const peers = useStore((s) => s.peers);
   const markers = useStore((s) => s.markers);
@@ -114,6 +116,7 @@ export default function MapView() {
     pushAlerts();
 
     setTimeout(() => map.invalidateSize(), 300);
+    setMapReady(true);
     const staleTimer = setInterval(pushPeers, 5000);
     const ro = new ResizeObserver(() => map.invalidateSize());
     ro.observe(containerRef.current);
@@ -122,6 +125,7 @@ export default function MapView() {
       clearInterval(staleTimer);
       ro.disconnect();
       map.remove();
+      setMapReady(false);
       mapRef.current = null;
       selfMarkerRef.current = null;
       accuracyRef.current = null;
@@ -507,6 +511,7 @@ export default function MapView() {
       {/* z-0 creates a stacking context so Leaflet's internal z-indexes (panes
           400, controls 1000) stay trapped below the z-20 UI panels. */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
+      {mapReady && mapRef.current && <PeerVideoOverlay map={mapRef.current} />}
       {mapError && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-tac-bg p-6 text-center">
           <div className="max-w-sm">

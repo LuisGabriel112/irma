@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Navigation, Radio } from "lucide-react";
+import { Navigation, Radio, Video, VideoOff } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
@@ -31,6 +31,11 @@ function PeerRow({
   const navTargetId = useStore((s) => s.navTargetId);
   const setNavTarget = useStore((s) => s.setNavTarget);
   const isNav = navTargetId === peer.id;
+
+  const watching = useStore((s) => s.watching.includes(peer.id));
+  const watchPeer = useStore((s) => s.watchPeer);
+  const unwatchPeer = useStore((s) => s.unwatchPeer);
+  const wsLink = useStore((s) => s.connection.kind === "websocket" && s.connection.state === "connected");
 
   const dist = here ? haversine(here, peer) : null;
   const brg = here ? bearing(here, peer) : null;
@@ -62,6 +67,21 @@ function PeerRow({
           {peer.battery != null && <div>{peer.battery}%</div>}
         </div>
       </button>
+      {wsLink && (
+        <button
+          type="button"
+          onClick={() => (watching ? unwatchPeer(peer.id) : watchPeer(peer.id))}
+          title={watching ? "Cerrar video" : "Ver cámara en vivo"}
+          aria-label={watching ? "Cerrar video" : "Ver cámara en vivo"}
+          aria-pressed={watching}
+          className={cn(
+            "flex w-11 shrink-0 items-center justify-center border-l border-tac-line/60 transition-colors",
+            watching ? "text-tac-accent" : "text-tac-muted hover:text-tac-text",
+          )}
+        >
+          {watching ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setNavTarget(isNav ? null : peer.id)}
@@ -86,6 +106,10 @@ export function UnitsPanel() {
   const setFollowSelf = useStore((s) => s.setFollowSelf);
   const connState = useStore((s) => s.connection.state);
   const connect = useStore((s) => s.connect);
+  const videoBroadcasting = useStore((s) => s.videoBroadcasting);
+  const startVideo = useStore((s) => s.startVideo);
+  const stopVideo = useStore((s) => s.stopVideo);
+  const wsLink = useStore((s) => s.connection.kind === "websocket" && s.connection.state === "connected");
 
   const hasFix = self.lat != null && self.lng != null;
   const here = useMemo(
@@ -123,6 +147,23 @@ export function UnitsPanel() {
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-wide text-tac-muted">TÚ</span>
       </button>
+
+      {wsLink && (
+        <button
+          type="button"
+          onClick={() => (videoBroadcasting ? stopVideo() : void startVideo())}
+          aria-pressed={videoBroadcasting}
+          className={cn(
+            "flex items-center gap-2 border-b border-tac-line px-3 py-2 text-left text-xs transition-colors hover:bg-tac-panel-2",
+            videoBroadcasting ? "text-tac-accent" : "text-tac-muted",
+          )}
+        >
+          {videoBroadcasting ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+          <span className="font-medium">
+            {videoBroadcasting ? "Transmitiendo cámara — toca para detener" : "Transmitir mi cámara a la malla"}
+          </span>
+        </button>
+      )}
 
       {sorted.length === 0 ? (
         <EmptyState

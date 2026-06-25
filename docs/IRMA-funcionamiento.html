@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>IRMA — Cómo funciona la aplicación</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #1b2430; line-height: 1.5; font-size: 11px; margin: 0;
+    background: #fff;
+  }
+  h1, h2, h3 { color: #0b3d2e; line-height: 1.2; }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 {
+    font-size: 18px; margin: 26px 0 8px; padding-bottom: 5px;
+    border-bottom: 2px solid #3ddc84;
+  }
+  h3 { font-size: 13px; margin: 16px 0 5px; color: #1b6b4f; }
+  p { margin: 6px 0; }
+  code {
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 10px;
+    background: #eef4f1; padding: 1px 4px; border-radius: 3px; color: #0b3d2e;
+  }
+  pre {
+    background: #0e1a16; color: #cfe9dd; padding: 12px 14px; border-radius: 7px;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 9.5px;
+    line-height: 1.45; overflow: hidden; white-space: pre-wrap; word-break: break-word;
+  }
+  pre .k { color: #7dd3fc; } pre .s { color: #fcd34d; } pre .c { color: #6b8577; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 10px; }
+  th, td { border: 1px solid #cdddd5; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #0b3d2e; color: #eafff6; font-weight: 600; }
+  tr:nth-child(even) td { background: #f4f9f6; }
+  .lead { font-size: 12.5px; color: #3a4a44; }
+  .pill {
+    display: inline-block; background: #0b3d2e; color: #eafff6; font-size: 9px;
+    padding: 2px 8px; border-radius: 10px; margin: 0 4px 4px 0; letter-spacing: .4px;
+  }
+  .grid2 { display: flex; gap: 14px; }
+  .grid2 > div { flex: 1; }
+  .card {
+    border: 1px solid #cdddd5; border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    background: #fafdfb;
+  }
+  .muted { color: #6b8577; font-size: 10px; }
+  .cover {
+    background: linear-gradient(135deg, #0b3d2e, #11241d);
+    color: #eafff6; padding: 40px 34px; border-radius: 12px; margin-bottom: 18px;
+  }
+  .cover h1 { color: #fff; }
+  .cover .sub { color: #9fe6c6; font-size: 14px; margin-top: 6px; }
+  .cover .meta { margin-top: 22px; font-size: 10.5px; color: #bfe9d6; }
+  figure { margin: 10px 0 14px; text-align: center; }
+  figcaption { font-size: 9.5px; color: #6b8577; margin-top: 4px; }
+  svg { max-width: 100%; height: auto; }
+  .pagebreak { page-break-before: always; }
+  .legend span { display:inline-block; margin-right:12px; font-size:9.5px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; vertical-align:middle; margin-right:4px; }
+  ol, ul { margin: 6px 0 6px 18px; padding: 0; }
+  li { margin: 3px 0; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>IRMA</h1>
+  <div class="sub">Conciencia Situacional Táctica — Documento de funcionamiento</div>
+  <p style="color:#cdeede; max-width:560px; margin-top:14px;">
+    Plataforma tipo <b>ATAK</b> reconstruida como aplicación web instalable (PWA) con
+    transporte de malla <b>LoRa</b> de primera clase. Seguimiento de unidades en vivo,
+    gráficos tácticos y chat sobre celular, Wi-Fi o radio fuera de red.
+  </p>
+  <div>
+    <span class="pill">PWA offline-first</span>
+    <span class="pill">Next.js 15 · React 19</span>
+    <span class="pill">Leaflet</span>
+    <span class="pill">Zustand</span>
+    <span class="pill">LoRa / WebSocket / BLE / Serial</span>
+  </div>
+  <div class="meta">Generado el 2026-06-24 &nbsp;·&nbsp; Proyecto educativo / civil &nbsp;·&nbsp; No afiliado al TAK Product Center</div>
+</div>
+
+<h2>1. Qué es y para qué sirve</h2>
+<p class="lead">
+  IRMA da a un equipo de campo una imagen compartida en vivo: dónde está cada quién, qué
+  marcan en el mapa y qué se dicen — funcione o no la red celular. Pensada para
+  búsqueda y rescate (SAR), seguridad de eventos, expediciones y equipos de campo.
+</p>
+<div class="grid2">
+  <div class="card">
+    <h3>Capacidades clave</h3>
+    <ul>
+      <li><b>Mapa en vivo</b> (Leaflet, tiles oscuros CARTO) con flecha de posición propia + anillo de precisión GPS.</li>
+      <li><b>Seguimiento de equipo</b> por afiliación: aliado / hostil / neutral / desconocido, con rango, rumbo y batería.</li>
+      <li><b>Gráficos tácticos</b>: marcadores, líneas, polígonos, círculos, regla rango/rumbo — difundidos a toda la red.</li>
+      <li><b>Alertas de pánico</b> de un toque que parpadean en el mapa de todos.</li>
+      <li><b>Navegación a objetivo</b> (bloodhound) con brújula real del dispositivo.</li>
+      <li><b>Chat de red</b> + adjuntos (imagen / nota de voz) sobre el relay.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Transportes (un mismo app)</h3>
+    <ul>
+      <li><b>Malla simulada</b> — demo sin hardware.</li>
+      <li><b>Relay WebSocket</b> — amigos por internet, salas compartidas.</li>
+      <li><b>LoRa por USB serial</b> — Web Serial.</li>
+      <li><b>LoRa por Bluetooth LE</b> — Web Bluetooth (Nordic UART).</li>
+    </ul>
+    <p class="muted">La abstracción <code>Transport</code> es la decisión de diseño clave:
+    la app envía/recibe <code>Packet</code> sobre <i>cualquier</i> enlace sin cambiar UI ni estado.</p>
+  </div>
+</div>
+
+<h2>2. Arquitectura general</h2>
+<p>Tres capas: <b>UI</b> (componentes React), <b>estado</b> (un store Zustand central) y
+<b>transporte</b> (enlace activo que mueve paquetes). El store es el único punto de verdad;
+la UI lo lee y el transporte lo alimenta.</p>
+
+<figure>
+<svg viewBox="0 0 760 430" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif" font-size="12">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/>
+    </marker>
+  </defs>
+  <!-- UI layer -->
+  <rect x="20" y="20" width="720" height="120" rx="10" fill="#f4f9f6" stroke="#3ddc84" stroke-width="1.5"/>
+  <text x="34" y="42" font-weight="700" fill="#0b3d2e">CAPA UI — components/</text>
+  <g fill="#fff" stroke="#1b6b4f">
+    <rect x="34" y="54" width="110" height="34" rx="6"/>
+    <rect x="156" y="54" width="110" height="34" rx="6"/>
+    <rect x="278" y="54" width="110" height="34" rx="6"/>
+    <rect x="400" y="54" width="120" height="34" rx="6"/>
+    <rect x="532" y="54" width="92" height="34" rx="6"/>
+    <rect x="636" y="54" width="90" height="34" rx="6"/>
+    <rect x="34" y="96" width="170" height="34" rx="6"/>
+    <rect x="216" y="96" width="200" height="34" rx="6"/>
+    <rect x="428" y="96" width="298" height="34" rx="6"/>
+  </g>
+  <g fill="#1b2430" text-anchor="middle" font-size="10.5">
+    <text x="89" y="75">MapView</text>
+    <text x="211" y="75">MapHud</text>
+    <text x="333" y="75">ToolDock</text>
+    <text x="460" y="75">StatusBar</text>
+    <text x="578" y="75">SidePanel</text>
+    <text x="681" y="75">SetupGate</text>
+    <text x="119" y="117">AppShell (GPS·brújula)</text>
+    <text x="316" y="117">panels/ Units·Chat·Markers·Link</text>
+    <text x="577" y="117">ui.tsx (primitivas)</text>
+  </g>
+
+  <!-- store -->
+  <rect x="160" y="180" width="440" height="70" rx="10" fill="#0b3d2e"/>
+  <text x="380" y="208" text-anchor="middle" fill="#eafff6" font-weight="700">ESTADO — store/useStore.ts (Zustand)</text>
+  <text x="380" y="230" text-anchor="middle" fill="#9fe6c6" font-size="10">self · peers · markers · messages · alerts · connection · tool · draft</text>
+
+  <!-- transport -->
+  <rect x="20" y="295" width="720" height="115" rx="10" fill="#f4f9f6" stroke="#3ddc84" stroke-width="1.5"/>
+  <text x="34" y="317" font-weight="700" fill="#0b3d2e">CAPA TRANSPORTE — transport/ (manager + interfaz Transport)</text>
+  <g fill="#fff" stroke="#1b6b4f">
+    <rect x="60" y="332" width="140" height="58" rx="6"/>
+    <rect x="220" y="332" width="140" height="58" rx="6"/>
+    <rect x="380" y="332" width="140" height="58" rx="6"/>
+    <rect x="540" y="332" width="150" height="58" rx="6"/>
+  </g>
+  <g text-anchor="middle" font-size="10.5" fill="#1b2430">
+    <text x="130" y="357" font-weight="700">simulated</text><text x="130" y="373" font-size="9">malla demo</text>
+    <text x="290" y="357" font-weight="700">websocket</text><text x="290" y="373" font-size="9">relay/salas</text>
+    <text x="450" y="357" font-weight="700">serial</text><text x="450" y="373" font-size="9">Web Serial · LoRa</text>
+    <text x="615" y="357" font-weight="700">bluetooth</text><text x="615" y="373" font-size="9">Web BLE · NUS</text>
+  </g>
+
+  <!-- arrows -->
+  <line x1="380" y1="140" x2="380" y2="178" stroke="#0b3d2e" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="380" y1="250" x2="380" y2="293" stroke="#0b3d2e" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="320" y1="293" x2="320" y2="252" stroke="#0b3d2e" stroke-width="1.6" marker-end="url(#ah)"/>
+  <text x="396" y="170" font-size="9" fill="#6b8577">lee estado</text>
+  <text x="396" y="276" font-size="9" fill="#6b8577">send()</text>
+  <text x="190" y="276" font-size="9" fill="#6b8577" text-anchor="end">onLine() → ingest</text>
+</svg>
+<figcaption>Figura 1 — Capas de la aplicación. La UI solo habla con el store; el store habla con el transporte activo.</figcaption>
+</figure>
+
+<table>
+<tr><th>Carpeta</th><th>Responsabilidad</th></tr>
+<tr><td><code>lib/protocol/</code></td><td><code>packet.ts</code> — códec compacto con guarda de MTU LoRa. <code>cot.ts</code> — interop Cursor-on-Target (ATAK/WinTAK).</td></tr>
+<tr><td><code>lib/transport/</code></td><td>Interfaz <code>Transport</code> + 4 implementaciones + <code>manager.ts</code> (ciclo de vida del enlace activo).</td></tr>
+<tr><td><code>lib/store/</code></td><td><code>useStore.ts</code> — estado central Zustand: propio, pares, marcadores, mensajes, alertas, enlace.</td></tr>
+<tr><td><code>lib/geo/</code></td><td>Haversine, rumbo, formateo, proyección.</td></tr>
+<tr><td><code>components/</code></td><td>Mapa, HUD, dock de herramientas, barra de estado, panel lateral, gate de identidad.</td></tr>
+</table>
+
+<div class="pagebreak"></div>
+<h2>3. Modelo de datos</h2>
+<p>Todo lo que viaja por la red y vive en el store se reduce a cuatro entidades.</p>
+
+<figure>
+<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="10">
+  <g stroke="#1b6b4f" stroke-width="1.3">
+    <rect x="20" y="30" width="170" height="160" rx="8" fill="#eef7f2"/>
+    <rect x="210" y="30" width="170" height="160" rx="8" fill="#eef7f2"/>
+    <rect x="400" y="30" width="170" height="120" rx="8" fill="#eef7f2"/>
+    <rect x="590" y="30" width="150" height="120" rx="8" fill="#eef7f2"/>
+  </g>
+  <g font-weight="700" fill="#0b3d2e" font-size="12">
+    <text x="34" y="50">Peer (unidad)</text>
+    <text x="224" y="50">Marker (gráfico)</text>
+    <text x="414" y="50">Alert (alerta)</text>
+    <text x="604" y="50">ChatMessage</text>
+  </g>
+  <g fill="#273b33" font-size="9.5">
+    <text x="34" y="70">id · callsign</text>
+    <text x="34" y="86">affiliation</text>
+    <text x="34" y="102">lat · lng</text>
+    <text x="34" y="118">heading · speed</text>
+    <text x="34" y="134">accuracy</text>
+    <text x="34" y="150">battery · team</text>
+    <text x="34" y="166">lastSeen</text>
+
+    <text x="224" y="70">id · type</text>
+    <text x="224" y="86">point/line/</text>
+    <text x="224" y="102">polygon/circle</text>
+    <text x="224" y="118">affiliation · color</text>
+    <text x="224" y="134">coords[] · radius</text>
+    <text x="224" y="150">label · remark</text>
+    <text x="224" y="166">createdBy · createdAt</text>
+
+    <text x="414" y="70">id · from</text>
+    <text x="414" y="86">type:</text>
+    <text x="414" y="102">panic/medical/</text>
+    <text x="414" y="118">contact</text>
+    <text x="414" y="134">lat · lng · ts</text>
+
+    <text x="604" y="70">id · from · to</text>
+    <text x="604" y="86">text</text>
+    <text x="604" y="102">media (img/voz)</text>
+    <text x="604" y="118">ts · self</text>
+  </g>
+  <text x="20" y="220" fill="#6b8577" font-size="9.5">Afiliaciones y colores:</text>
+  <g font-size="9.5" fill="#273b33">
+    <circle cx="150" cy="216" r="5" fill="#3ddc84"/><text x="160" y="220">propio</text>
+    <circle cx="225" cy="216" r="5" fill="#38bdf8"/><text x="235" y="220">aliado</text>
+    <circle cx="300" cy="216" r="5" fill="#cbd5cf"/><text x="310" y="220">neutral</text>
+    <circle cx="375" cy="216" r="5" fill="#ff4d4d"/><text x="385" y="220">hostil</text>
+    <circle cx="445" cy="216" r="5" fill="#ffb020"/><text x="455" y="220">desconocido</text>
+  </g>
+</svg>
+<figcaption>Figura 2 — Entidades del dominio (src/lib/types.ts).</figcaption>
+</figure>
+
+<h2>4. Protocolo de cable</h2>
+<p>Un paquete = una línea de JSON compacto, dimensionada para caber en <b>una sola trama
+LoRa</b> (≤ <code>222 bytes</code>, SF7–SF9). Claves cortas para abaratar el aire; <code>t</code> es el código de tipo.</p>
+
+<pre><span class="c">// posición de RAVEN-1</span>
+{<span class="k">"t"</span>:0,<span class="k">"i"</span>:<span class="s">"a1b2"</span>,<span class="k">"c"</span>:<span class="s">"RAVEN-1"</span>,<span class="k">"a"</span>:<span class="s">"s"</span>,<span class="k">"la"</span>:19.4326,<span class="k">"ln"</span>:-99.1332,<span class="k">"h"</span>:270,<span class="k">"b"</span>:88,<span class="k">"ts"</span>:1718480000000}</pre>
+
+<table>
+<tr><th><code>t</code></th><th>Tipo</th><th>Campos clave</th><th>LoRa?</th></tr>
+<tr><td>0</td><td>posición</td><td><code>i</code> id · <code>c</code> callsign · <code>a</code> afiliación · <code>la</code>/<code>ln</code> · <code>h</code> rumbo · <code>s</code> vel · <code>ac</code> precisión · <code>b</code> batería</td><td>sí</td></tr>
+<tr><td>1</td><td>mensaje</td><td><code>i</code> id · <code>f</code> de · <code>o</code> a (omitir = difusión) · <code>x</code> texto</td><td>sí</td></tr>
+<tr><td>2</td><td>marcador</td><td><code>i</code> · <code>m</code> tipo · <code>a</code> afiliación · <code>co</code> coords · <code>rd</code> radio · <code>l</code> etiqueta · <code>r</code> nota · <code>by</code> autor</td><td>sí</td></tr>
+<tr><td>3</td><td>borrar-marcador</td><td><code>i</code> id</td><td>sí</td></tr>
+<tr><td>4</td><td>ping</td><td><code>i</code> · <code>f</code> de · <code>la</code>/<code>ln</code></td><td>sí</td></tr>
+<tr><td>5</td><td>alerta</td><td><code>i</code> · <code>f</code> de · <code>k</code> tipo (pánico/médico/contacto) · <code>la</code>/<code>ln</code></td><td>sí</td></tr>
+<tr><td>6</td><td>media</td><td><code>i</code> · <code>f</code> de · <code>mk</code> img/audio · <code>mm</code> mime · <code>d</code> base64 · <code>du</code> duración</td><td><b>no</b> (solo relay)</td></tr>
+</table>
+<p class="muted">Códec en <code>src/lib/protocol/packet.ts</code>: <code>encode()</code> → línea, <code>decode()</code> → paquete, <code>fitsInFrame()</code> verifica el presupuesto de 222 B. Lat/lng se redondean a 6 decimales (5 para marcadores) para ahorrar bytes. Media (imagen/voz) excede de sobra una trama LoRa, así que <b>solo viaja por el relay WebSocket</b>.</p>
+
+<div class="pagebreak"></div>
+<h2>5. Ciclo de vida del paquete (envío y recepción)</h2>
+<p>Toda mutación de la red pasa por el mismo embudo: el store serializa con <code>encode()</code>
+y empuja al <code>manager</code>; al recibir, el <code>manager</code> entrega líneas a
+<code>ingestLine()</code> que decodifica y aplica con <code>applyPacket()</code>.</p>
+
+<figure>
+<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="10.5">
+  <defs>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/></marker>
+  </defs>
+  <!-- TX path -->
+  <text x="20" y="24" font-weight="700" fill="#0b3d2e">SALIDA (TX)</text>
+  <g stroke="#1b6b4f" fill="#fff">
+    <rect x="20" y="34" width="130" height="44" rx="7"/>
+    <rect x="190" y="34" width="150" height="44" rx="7"/>
+    <rect x="380" y="34" width="130" height="44" rx="7"/>
+    <rect x="550" y="34" width="180" height="44" rx="7"/>
+  </g>
+  <g text-anchor="middle" fill="#1b2430">
+    <text x="85" y="54">acción UI</text><text x="85" y="69" font-size="8.5">pánico / chat / marcador</text>
+    <text x="265" y="54">store</text><text x="265" y="69" font-size="8.5">crea Packet + encode()</text>
+    <text x="445" y="54">manager</text><text x="445" y="69" font-size="8.5">.send(line)</text>
+    <text x="640" y="54">transporte activo</text><text x="640" y="69" font-size="8.5">LoRa / WS / BLE / serial</text>
+  </g>
+  <line x1="150" y1="56" x2="188" y2="56" stroke="#0b3d2e" marker-end="url(#a2)"/>
+  <line x1="340" y1="56" x2="378" y2="56" stroke="#0b3d2e" marker-end="url(#a2)"/>
+  <line x1="510" y1="56" x2="548" y2="56" stroke="#0b3d2e" marker-end="url(#a2)"/>
+
+  <!-- medium -->
+  <rect x="250" y="120" width="260" height="40" rx="20" fill="#0b3d2e"/>
+  <text x="380" y="145" text-anchor="middle" fill="#eafff6" font-weight="700">MEDIO  ·  línea JSON + "\n"</text>
+  <line x1="640" y1="78" x2="430" y2="118" stroke="#6b8577" stroke-dasharray="4 3" marker-end="url(#a2)"/>
+  <line x1="330" y1="160" x2="120" y2="200" stroke="#6b8577" stroke-dasharray="4 3" marker-end="url(#a2)"/>
+
+  <!-- RX path -->
+  <text x="20" y="214" font-weight="700" fill="#0b3d2e">ENTRADA (RX)</text>
+  <g stroke="#1b6b4f" fill="#fff">
+    <rect x="20" y="224" width="160" height="44" rx="7"/>
+    <rect x="220" y="224" width="150" height="44" rx="7"/>
+    <rect x="410" y="224" width="150" height="44" rx="7"/>
+    <rect x="600" y="224" width="130" height="44" rx="7"/>
+  </g>
+  <g text-anchor="middle" fill="#1b2430">
+    <text x="100" y="244">transporte</text><text x="100" y="259" font-size="8.5">onLine(line)</text>
+    <text x="295" y="244">ingestLine()</text><text x="295" y="259" font-size="8.5">decode() → Packet</text>
+    <text x="485" y="244">applyPacket()</text><text x="485" y="259" font-size="8.5">switch por kind</text>
+    <text x="665" y="244">store set()</text><text x="665" y="259" font-size="8.5">UI re-renderiza</text>
+  </g>
+  <line x1="180" y1="246" x2="218" y2="246" stroke="#0b3d2e" marker-end="url(#a2)"/>
+  <line x1="370" y1="246" x2="408" y2="246" stroke="#0b3d2e" marker-end="url(#a2)"/>
+  <line x1="560" y1="246" x2="598" y2="246" stroke="#0b3d2e" marker-end="url(#a2)"/>
+  <text x="380" y="300" text-anchor="middle" fill="#6b8577" font-size="9">applyPacket ignora ecos del propio id y mensajes no dirigidos a uno; los pares viejos se purgan tras 5 min (pruneStale).</text>
+</svg>
+<figcaption>Figura 3 — Embudo único de salida y entrada de paquetes (useStore.ts).</figcaption>
+</figure>
+
+<h3>Reglas de aplicación al recibir</h3>
+<ul>
+  <li><b>position</b>: ignora el eco del propio <code>id</code>; un par que se anuncia como <code>self</code> se re-mapea a <code>friend</code> desde nuestra perspectiva.</li>
+  <li><b>message / media</b>: si lleva destinatario y no soy yo, se descarta; si no, entra al chat y suma no-leídos.</li>
+  <li><b>marker / marker-delete</b>: agrega o quita del diccionario de marcadores.</li>
+  <li><b>alert</b>: registra una baliza de socorro que parpadea en el mapa hasta limpiarla.</li>
+  <li><b>ping</b>: aparece como nota "◎ PING" en el chat.</li>
+</ul>
+
+<div class="pagebreak"></div>
+<h2>6. Los cuatro transportes</h2>
+<p>El <code>TransportManager</code> posee un único enlace activo. Cambiar de enlace es
+<code>connect(kind)</code>: primero desmonta el anterior, luego instancia el nuevo. Todos
+cumplen la misma interfaz <code>Transport</code> (<code>connect / disconnect / send</code> + callbacks
+<code>onLine / onState / onLog</code>).</p>
+
+<table>
+<tr><th>Transporte</th><th>Tecnología web</th><th>Alcance</th><th>Requisitos</th></tr>
+<tr><td><b>Malla simulada</b></td><td>timers en la app</td><td>solo demo local</td><td>ninguno</td></tr>
+<tr><td><b>Internet · relay</b></td><td>WebSocket</td><td>global, por salas</td><td>URL <code>wss://</code> + código de sala</td></tr>
+<tr><td><b>LoRa · USB serie</b></td><td>Web Serial</td><td>fuera de red (radio)</td><td>Chromium + HTTPS/localhost + placa LoRa</td></tr>
+<tr><td><b>LoRa · Bluetooth</b></td><td>Web Bluetooth (NUS)</td><td>fuera de red (radio)</td><td>Chromium + HTTPS/localhost + placa BLE</td></tr>
+</table>
+
+<h3>Ruta por internet — relay WebSocket</h3>
+<p>El relay (<code>relay/server.mjs</code>) es un <b>fan-out por sala agnóstico al formato</b>:
+reenvía cada línea que recibe a los <i>otros</i> clientes de la misma sala. No entiende
+el contenido — solo mueve líneas. Trama máxima 1 MB (cabe una imagen/voz comprimida).</p>
+
+<figure>
+<svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="10.5">
+  <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/></marker></defs>
+  <circle cx="350" cy="130" r="48" fill="#0b3d2e"/>
+  <text x="350" y="126" text-anchor="middle" fill="#eafff6" font-weight="700">RELAY</text>
+  <text x="350" y="142" text-anchor="middle" fill="#9fe6c6" font-size="9">sala "alfa"</text>
+  <g stroke="#1b6b4f" fill="#fff">
+    <rect x="40" y="30" width="130" height="46" rx="8"/>
+    <rect x="40" y="184" width="130" height="46" rx="8"/>
+    <rect x="530" y="30" width="130" height="46" rx="8"/>
+    <rect x="530" y="184" width="130" height="46" rx="8"/>
+  </g>
+  <g text-anchor="middle" fill="#1b2430">
+    <text x="105" y="50">RAVEN-1</text><text x="105" y="65" font-size="8.5">celular</text>
+    <text x="105" y="204">RAVEN-2</text><text x="105" y="219" font-size="8.5">laptop</text>
+    <text x="595" y="50">HAWK-3</text><text x="595" y="65" font-size="8.5">tablet</text>
+    <text x="595" y="204">OWL-4</text><text x="595" y="219" font-size="8.5">celular</text>
+  </g>
+  <g stroke="#0b3d2e" stroke-width="1.4" fill="none">
+    <line x1="170" y1="53" x2="305" y2="115" marker-end="url(#a3)"/>
+    <line x1="170" y1="207" x2="305" y2="150" marker-end="url(#a3)"/>
+    <line x1="398" y1="115" x2="528" y2="53" marker-end="url(#a3)"/>
+    <line x1="398" y1="150" x2="528" y2="207" marker-end="url(#a3)"/>
+  </g>
+  <text x="350" y="245" text-anchor="middle" fill="#6b8577" font-size="9">Misma URL + mismo código de sala = todos se ven en el mapa, desde cualquier red.</text>
+</svg>
+<figcaption>Figura 4 — Topología del relay: difusión por sala. Despliega en Render/Railway/Fly y apunta <code>NEXT_PUBLIC_RELAY_URL=wss://tu-relay</code>.</figcaption>
+</figure>
+
+<h3>Ruta fuera de red — puente LoRa</h3>
+<p>El navegador no maneja una radio LoRa directo. IRMA habla con un <b>puente</b>: cualquier
+placa LoRa (Heltec/TTGO/LilyGO, RAK, o un nodo Meshtastic) que retransmita <b>tramas
+delimitadas por salto de línea</b> entre su puerto USB/BLE y el PHY LoRa.</p>
+
+<figure>
+<svg viewBox="0 0 720 150" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="10">
+  <defs><marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/></marker></defs>
+  <g stroke="#1b6b4f" fill="#fff">
+    <rect x="20" y="50" width="120" height="50" rx="8"/>
+    <rect x="200" y="50" width="120" height="50" rx="8"/>
+    <rect x="400" y="50" width="120" height="50" rx="8"/>
+    <rect x="580" y="50" width="120" height="50" rx="8"/>
+  </g>
+  <g text-anchor="middle" fill="#1b2430">
+    <text x="80" y="72">IRMA (PWA)</text><text x="80" y="88" font-size="8.5">Web Serial / BLE</text>
+    <text x="260" y="72">Puente LoRa</text><text x="260" y="88" font-size="8.5">Heltec / RAK</text>
+    <text x="460" y="72">Aire LoRa</text><text x="460" y="88" font-size="8.5">915 MHz · SF7-9</text>
+    <text x="640" y="72">Otros nodos</text><text x="640" y="88" font-size="8.5">equipo en campo</text>
+  </g>
+  <g stroke="#0b3d2e" stroke-width="1.4">
+    <line x1="140" y1="75" x2="198" y2="75" marker-end="url(#a4)"/>
+    <line x1="320" y1="75" x2="398" y2="75" marker-end="url(#a4)"/>
+    <line x1="520" y1="75" x2="578" y2="75" marker-end="url(#a4)"/>
+  </g>
+  <text x="170" y="118" text-anchor="middle" fill="#6b8577" font-size="8.5">línea JSON + \n</text>
+  <text x="360" y="118" text-anchor="middle" fill="#6b8577" font-size="8.5">≤222 B por trama</text>
+</svg>
+<figcaption>Figura 5 — Puente de radio. El firmware de referencia (Arduino, librería <code>LoRa</code>, SX127x) reenvía cada línea serial a la radio y emite cada trama recibida como línea.</figcaption>
+</figure>
+
+<div class="pagebreak"></div>
+<h2>7. Recorrido de uso (flujo del operador)</h2>
+<ol>
+  <li><b>Setup de identidad</b> (<code>SetupGate</code>): callsign, equipo, afiliación, código de sala y posición inicial. Gatea el mapa y persiste en <code>localStorage</code>.</li>
+  <li><b>AppShell</b> arranca: vigila el GPS (<code>watchPosition</code>), lee la <b>brújula real</b> del dispositivo, late la posición propia (beacon periódico) y registra el service worker.</li>
+  <li><b>Conectar un enlace</b> desde el panel <b>Enlace</b>: elige transporte → <code>connect()</code>. El estado pasa CONECTANDO → CONECTADO.</li>
+  <li><b>Operar el mapa</b> con el <code>ToolDock</code>: colocar marcadores, dibujar líneas/polígonos/círculos, medir rango/rumbo, fijar posición a mano, centrar/seguir, emitir sirena.</li>
+  <li><b>Difundir</b>: cada acción genera un <code>Packet</code> que sale por el enlace activo; los pares lo reciben y su mapa se actualiza.</li>
+  <li><b>Navegar a objetivo</b>: selecciona unidad/marcador → HUD bloodhound con distancia + rumbo en vivo, flecha propia orientada por brújula.</li>
+</ol>
+
+<figure>
+<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="10">
+  <defs><marker id="a5" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3ddc84"/></marker></defs>
+  <g fill="#0b3d2e">
+    <rect x="20" y="70" width="110" height="56" rx="8"/>
+    <rect x="170" y="70" width="110" height="56" rx="8"/>
+    <rect x="320" y="70" width="110" height="56" rx="8"/>
+    <rect x="470" y="70" width="110" height="56" rx="8"/>
+    <rect x="620" y="70" width="90" height="56" rx="8"/>
+  </g>
+  <g text-anchor="middle" fill="#eafff6" font-size="10.5">
+    <text x="75" y="94">Setup</text><text x="75" y="110" font-size="8" fill="#9fe6c6">identidad+sala</text>
+    <text x="225" y="94">AppShell</text><text x="225" y="110" font-size="8" fill="#9fe6c6">GPS+brújula</text>
+    <text x="375" y="94">Conectar</text><text x="375" y="110" font-size="8" fill="#9fe6c6">enlace</text>
+    <text x="525" y="94">Operar</text><text x="525" y="110" font-size="8" fill="#9fe6c6">mapa+chat</text>
+    <text x="665" y="94">Difundir</text><text x="665" y="110" font-size="8" fill="#9fe6c6">a la red</text>
+  </g>
+  <g stroke="#3ddc84" stroke-width="2">
+    <line x1="130" y1="98" x2="168" y2="98" marker-end="url(#a5)"/>
+    <line x1="280" y1="98" x2="318" y2="98" marker-end="url(#a5)"/>
+    <line x1="430" y1="98" x2="468" y2="98" marker-end="url(#a5)"/>
+    <line x1="580" y1="98" x2="618" y2="98" marker-end="url(#a5)"/>
+  </g>
+</svg>
+<figcaption>Figura 6 — Flujo del operador de extremo a extremo.</figcaption>
+</figure>
+
+<h3>Herramientas del mapa</h3>
+<table>
+<tr><th>Herramienta</th><th>Acción</th></tr>
+<tr><td>Mano</td><td>Mover / seleccionar (clic en unidades y gráficos para detalle)</td></tr>
+<tr><td>Marcadores ▾</td><td>Colocar marcador aliado / hostil / neutral / punto de ruta</td></tr>
+<tr><td>Dibujar ▾</td><td>Trazar línea / polígono / círculo (se difunden a la red)</td></tr>
+<tr><td>Regla</td><td>Rango + rumbo entre dos clics (Haversine)</td></tr>
+<tr><td>Fijar posición</td><td>Toca el mapa para fijar tu ubicación a mano (sobrevive recargas)</td></tr>
+<tr><td>Centrar</td><td>Recentrar y seguir tu posición</td></tr>
+<tr><td>Sirena</td><td>Emitir alerta de pánico a la sala (parpadea en todos los mapas)</td></tr>
+</table>
+
+<h2>8. PWA, persistencia y offline</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>Instalable + offline-first</h3>
+    <p>Manifest + iconos la hacen instalable. El service worker (<code>public/sw.js</code>, solo
+    en producción) cachea el app-shell con estrategia <b>network-first</b> y los tiles/glyphs
+    con <b>cache-first</b>: un área ya vista queda disponible fuera de red.</p>
+  </div>
+  <div class="card">
+    <h3>Persistencia local</h3>
+    <p>La <b>identidad</b> (callsign, equipo, sala, afiliación, posición fijada a mano) y la
+    <b>sesión</b> (marcadores + chat) se guardan en <code>localStorage</code>. Una suscripción
+    al store auto-graba cuando cambian marcadores o mensajes. Las posiciones GPS en vivo son
+    efímeras; solo la posición fijada a mano se restaura.</p>
+  </div>
+</div>
+
+<h2>9. Stack y cómo correrlo</h2>
+<p><span class="pill">Next.js 15 (App Router)</span><span class="pill">React 19</span><span class="pill">TypeScript</span><span class="pill">Tailwind CSS v4</span><span class="pill">Leaflet</span><span class="pill">Zustand</span><span class="pill">ws (relay)</span></p>
+<pre><span class="c"># desarrollo local</span>
+npm install
+npm run dev            <span class="c"># http://localhost:3000</span>
+
+<span class="c"># celular con GPS real (HTTPS en la LAN)</span>
+npm run dev:lan       <span class="c"># abre https://&lt;ip-LAN&gt;:3000 en el teléfono</span>
+
+<span class="c"># producción (service worker / offline activo)</span>
+npm run build &amp;&amp; npm start
+
+<span class="c"># relay multi-dispositivo por internet</span>
+npm run relay         <span class="c"># escucha en :1234 (o $PORT)</span></pre>
+<p class="muted">Despliegue: app en Vercel, relay en cualquier host con proceso de larga vida + WebSocket
+(Render/Railway/Fly; incluye <code>render.yaml</code> y <code>relay/Dockerfile</code>). Apunta la app con
+<code>NEXT_PUBLIC_RELAY_URL=wss://tu-relay</code>.</p>
+
+<h2>10. Hoja de ruta</h2>
+<ul>
+  <li>Transporte Meshtastic protobuf nativo (directo, sin firmware custom).</li>
+  <li>Cifrado E2E de paquetes (claves por equipo).</li>
+  <li>Cuadrícula MGRS y entrada de coordenadas.</li>
+  <li>Paquetes de tiles offline (importación MBTiles).</li>
+  <li>Rastros (breadcrumbs) e historial de unidades.</li>
+  <li>Geofencing y alertas de zona. &nbsp;·&nbsp; Llamadas de voz (WebRTC).</li>
+</ul>
+
+<p class="muted" style="margin-top:24px; border-top:1px solid #cdddd5; padding-top:8px;">
+IRMA — proyecto educativo / civil de conciencia situacional. No afiliado al TAK Product Center ni al Gobierno de EE. UU.
+&nbsp;·&nbsp; Documento generado a partir del código fuente (README.md, src/lib/, relay/server.mjs).
+</p>
+
+</body>
+</html>

@@ -13,6 +13,7 @@ import type {
 import { base64Bytes, buildDataUrl, splitDataUrl } from "@/lib/util/media";
 import { decode, encode, type Packet } from "@/lib/protocol/packet";
 import { haversine } from "@/lib/geo/utils";
+import { WebRTCMesh } from "@/lib/webrtc/mesh";
 import { TransportManager } from "@/lib/transport/manager";
 import type {
   ConnectOptions,
@@ -71,6 +72,11 @@ export interface StoreState {
   navTargetId: string | null; // bloodhound: peer/marker id to navigate toward
   draft: LatLng[]; // in-progress drawing vertices (line/polygon/circle)
   setupComplete: boolean; // first-run identity setup done — gates the map
+
+  // live video (WebRTC, relay-only) — all ephemeral, never persisted
+  videoBroadcasting: boolean; // own camera is live to the mesh
+  watching: string[]; // peer ids whose camera we want to see
+  remoteStreams: Record<string, MediaStream>; // peerId -> inbound media
 
   // identity
   hydrateIdentity(): void;
@@ -136,6 +142,12 @@ export interface StoreState {
   undoDraftPoint(): void;
   clearDraft(): void;
   commitDraft(): void;
+
+  // live video
+  startVideo(): Promise<void>;
+  stopVideo(): void;
+  watchPeer(peerId: string): void;
+  unwatchPeer(peerId: string): void;
 
   // alerts (distress beacons)
   raiseAlert(type: AlertType): void;
@@ -265,6 +277,26 @@ export const useStore = create<StoreState>()((set, get) => {
     onLog: (msg) => set((s) => ({ log: [stamp(msg), ...s.log].slice(0, 200) })),
   });
 
+  // WebRTC live-video mesh. Signaling rides the active relay transport; media is
+  // peer-to-peer. Inbound signal packets are routed here from ingestLine.
+  const mesh = new WebRTCMesh(
+    "self-local",
+    (to, signal) => {
+      const s = get().self;
+      void manager.send(
+        encode({ kind: "signal", id: `${s.id}-${now()}`, from: s.id, to, signal, ts: now() }),
+      );
+    },
+    (peerId, stream) =>
+      set((s) => {
+        const next = { ...s.remoteStreams };
+        if (stream) next[peerId] = stream;
+        else delete next[peerId];
+        return { remoteStreams: next };
+      }),
+    (msg) => set((s) => ({ log: [stamp(msg), ...s.log].slice(0, 200) })),
+  );
+
   return {
     // Deterministic SSR-safe default; real identity is hydrated client-side
     // post-mount via hydrateIdentity() to avoid React hydration mismatches.
@@ -288,6 +320,9 @@ export const useStore = create<StoreState>()((set, get) => {
     navTargetId: null,
     draft: [],
     setupComplete: false,
+    videoBroadcasting: false,
+    watching: [],
+    remoteStreams: {},
 
     persistIdentity: () => {
       const s = get().self;
@@ -333,6 +368,7 @@ export const useStore = create<StoreState>()((set, get) => {
         },
         setupComplete: id.ready,
       }));
+      mesh.setSelfId(id.id);
     },
 
     completeSetup: (input) => {
@@ -358,6 +394,7 @@ export const useStore = create<StoreState>()((set, get) => {
         setupComplete: true,
       }));
       get().persistIdentity();
+      mesh.setSelfId(get().self.id);
     },
 
     hydrateSession: () => {
@@ -368,10 +405,12 @@ export const useStore = create<StoreState>()((set, get) => {
     editIdentity: () => set({ setupComplete: false }),
 
     logout: async () => {
+      mesh.destroy();
       await manager.disconnect();
       clearIdentity();
       clearSession(); // wipe persisted markers + chat on sign-out
       const fresh = loadIdentity(); // mints a new random identity (ready: false)
+      mesh.setSelfId(fresh.id);
       set({
         self: {
           id: fresh.id,
@@ -389,6 +428,9 @@ export const useStore = create<StoreState>()((set, get) => {
         connection: { state: "disconnected" },
         navTargetId: null,
         setupComplete: false,
+        videoBroadcasting: false,
+        watching: [],
+        remoteStreams: {},
       });
     },
 
@@ -447,8 +489,15 @@ export const useStore = create<StoreState>()((set, get) => {
       }
     },
     disconnect: async () => {
+      mesh.destroy();
       await manager.disconnect();
-      set({ peers: {}, connection: { state: "disconnected" } });
+      set({
+        peers: {},
+        connection: { state: "disconnected" },
+        videoBroadcasting: false,
+        watching: [],
+        remoteStreams: {},
+      });
     },
 
     broadcastPosition: () => {
@@ -468,6 +517,8 @@ export const useStore = create<StoreState>()((set, get) => {
         ts: now(),
       };
       void manager.send(encode(packet));
+      // Reuse the 5s beacon to pull any newly-seen peers into the video mesh.
+      if (get().videoBroadcasting) void mesh.startBroadcast(Object.keys(get().peers));
     },
 
     sendMessage: (text, to) => {
@@ -592,6 +643,44 @@ export const useStore = create<StoreState>()((set, get) => {
       set({ draft: [] });
     },
 
+    startVideo: async () => {
+      const conn = get().connection;
+      if (conn.kind !== "websocket" || conn.state !== "connected") {
+        set((s) => ({
+          log: [stamp("Video requiere enlace por relay (internet)"), ...s.log].slice(0, 200),
+        }));
+        return;
+      }
+      try {
+        const targets = Object.keys(get().peers);
+        await mesh.startBroadcast(targets);
+        set((s) => ({
+          videoBroadcasting: true,
+          log: [stamp("Cámara en vivo emitiendo a la malla"), ...s.log].slice(0, 200),
+        }));
+      } catch (e) {
+        set((s) => ({
+          log: [stamp(`No se pudo iniciar la cámara: ${(e as Error).message}`), ...s.log].slice(0, 200),
+        }));
+      }
+    },
+    stopVideo: () => {
+      mesh.stopBroadcast();
+      set({ videoBroadcasting: false });
+    },
+    watchPeer: (peerId) => {
+      mesh.watch(peerId);
+      set((s) => (s.watching.includes(peerId) ? {} : { watching: [...s.watching, peerId] }));
+    },
+    unwatchPeer: (peerId) => {
+      mesh.unwatch(peerId);
+      set((s) => {
+        const next = { ...s.remoteStreams };
+        delete next[peerId];
+        return { watching: s.watching.filter((id) => id !== peerId), remoteStreams: next };
+      });
+    },
+
     raiseAlert: (type) => {
       const s = get().self;
       if (s.lat == null || s.lng == null) {
@@ -646,6 +735,10 @@ export const useStore = create<StoreState>()((set, get) => {
     ingestLine: (line) => {
       const packet = decode(line);
       if (!packet) return;
+      if (packet.kind === "signal") {
+        if (packet.to === get().self.id) void mesh.onSignal(packet.from, packet.signal);
+        return;
+      }
       applyPacket(get(), packet, set);
     },
 
