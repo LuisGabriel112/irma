@@ -6,6 +6,8 @@ import { useStore, type Tool } from "@/lib/store/useStore";
 import {
   AFFILIATION_COLORS,
   AFFILIATION_LABELS,
+  STATUS_COLORS,
+  STATUS_LABELS,
   type Affiliation,
   type LatLng,
 } from "@/lib/types";
@@ -47,6 +49,7 @@ export default function MapView() {
   const selfMarkerRef = useRef<L.Marker | null>(null);
   const accuracyRef = useRef<L.Circle | null>(null);
   const peersLayerRef = useRef<L.LayerGroup | null>(null);
+  const trailsLayerRef = useRef<L.LayerGroup | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const measureLayerRef = useRef<L.LayerGroup | null>(null);
   const draftLayerRef = useRef<L.LayerGroup | null>(null);
@@ -59,6 +62,8 @@ export default function MapView() {
   const [mapReady, setMapReady] = useState(false);
 
   const peers = useStore((s) => s.peers);
+  const trails = useStore((s) => s.trails);
+  const trailsOn = useStore((s) => s.trailsOn);
   const markers = useStore((s) => s.markers);
   const alerts = useStore((s) => s.alerts);
   const draft = useStore((s) => s.draft);
@@ -97,6 +102,7 @@ export default function MapView() {
     L.control.zoom({ position: "bottomright" }).addTo(map);
     L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
 
+    trailsLayerRef.current = L.layerGroup().addTo(map);
     peersLayerRef.current = L.layerGroup().addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
     measureLayerRef.current = L.layerGroup().addTo(map);
@@ -109,6 +115,7 @@ export default function MapView() {
     map.on("mousemove", onMapMouseMove);
 
     pushSelf();
+    pushTrails();
     pushPeers();
     pushMarkers();
     pushDraft();
@@ -130,6 +137,7 @@ export default function MapView() {
       selfMarkerRef.current = null;
       accuracyRef.current = null;
       peersLayerRef.current = null;
+      trailsLayerRef.current = null;
       markersLayerRef.current = null;
       measureLayerRef.current = null;
       draftLayerRef.current = null;
@@ -211,6 +219,17 @@ export default function MapView() {
       const color = AFFILIATION_COLORS[p.affiliation];
       const rel = formatRelTime(p.lastSeen);
       const seen = rel === "ahora" ? "visto ahora" : `visto hace ${rel}`;
+      // A non-OK status rings the dot in its alert color so it reads at a glance.
+      const flagged = p.status && p.status !== "ok";
+      if (flagged) {
+        L.circleMarker([p.lat, p.lng], {
+          radius: 10,
+          color: STATUS_COLORS[p.status!],
+          weight: 2,
+          fillOpacity: 0,
+          opacity: stale ? 0.4 : 0.95,
+        }).addTo(layer);
+      }
       const cm = L.circleMarker([p.lat, p.lng], {
         radius: 6,
         color: "#0a0e0d",
@@ -218,7 +237,8 @@ export default function MapView() {
         fillColor: color,
         fillOpacity: stale ? 0.35 : 1,
       });
-      cm.bindTooltip(`<span style="color:${color}">${esc(p.callsign)}</span>`, {
+      const tipStatus = flagged ? ` <span style="color:${STATUS_COLORS[p.status!]}">▲${STATUS_LABELS[p.status!]}</span>` : "";
+      cm.bindTooltip(`<span style="color:${color}">${esc(p.callsign)}</span>${tipStatus}`, {
         permanent: true,
         direction: "top",
         offset: [0, -6],
@@ -227,11 +247,33 @@ export default function MapView() {
       });
       cm.bindPopup(
         `<div class="irma-pop"><div class="irma-pop-h" style="color:${color}">${esc(p.callsign)}</div>` +
-          `<div class="irma-pop-r">${AFFILIATION_LABELS[p.affiliation]}</div>` +
+          `<div class="irma-pop-r">${AFFILIATION_LABELS[p.affiliation]}${flagged ? ` · <span style="color:${STATUS_COLORS[p.status!]}">${STATUS_LABELS[p.status!]}</span>` : ""}</div>` +
           `<div class="irma-pop-r">${formatLatLng(p.lat, p.lng)}</div>` +
           `<div class="irma-pop-r">${seen}${p.battery != null ? ` · ${p.battery}%` : ""}</div></div>`,
       );
       cm.addTo(layer);
+    }
+  }
+
+  function pushTrails() {
+    const layer = trailsLayerRef.current;
+    if (!layer || !mapRef.current) return;
+    layer.clearLayers();
+    const st = useStore.getState();
+    if (!st.trailsOn) return;
+    for (const [id, pts] of Object.entries(st.trails)) {
+      if (pts.length < 2) continue;
+      const isSelf = id === st.self.id;
+      const color = isSelf
+        ? AFFILIATION_COLORS.self
+        : AFFILIATION_COLORS[st.peers[id]?.affiliation ?? "unknown"];
+      L.polyline(pts.map((p) => [p.lat, p.lng]) as [number, number][], {
+        color,
+        weight: 2,
+        opacity: 0.5,
+        dashArray: "1 5",
+        lineCap: "round",
+      }).addTo(layer);
     }
   }
 
@@ -454,6 +496,11 @@ export default function MapView() {
     pushPeers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [peers]);
+
+  useEffect(() => {
+    pushTrails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trails, trailsOn]);
 
   useEffect(() => {
     pushMarkers();

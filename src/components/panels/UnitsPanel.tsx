@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Navigation, Radio, Video, VideoOff } from "lucide-react";
+import { Navigation, Radio, Route, Video, VideoOff } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
-import { AFFILIATION_LABELS, type Peer } from "@/lib/types";
+import {
+  AFFILIATION_LABELS,
+  STATUS_COLORS,
+  STATUS_LABELS,
+  type Peer,
+  type UnitStatus,
+} from "@/lib/types";
 import { bearing, compass, formatDistance, formatRelTime, haversine } from "@/lib/geo/utils";
 
 /**
@@ -57,6 +63,14 @@ function PeerRow({
             <span className="text-[10px] uppercase tracking-wide text-tac-muted">
               {AFFILIATION_LABELS[peer.affiliation]}
             </span>
+            {peer.status && peer.status !== "ok" && (
+              <span
+                className="rounded px-1 text-[9px] font-bold uppercase tracking-wide"
+                style={{ color: STATUS_COLORS[peer.status], border: `1px solid ${STATUS_COLORS[peer.status]}` }}
+              >
+                {STATUS_LABELS[peer.status]}
+              </span>
+            )}
           </div>
           <div className="text-[11px] tabular-nums text-tac-muted">
             {dist != null ? `${formatDistance(dist)} · ${compass(brg!)} ${Math.round(brg!)}°` : "distancia n/d"}
@@ -110,6 +124,10 @@ export function UnitsPanel() {
   const startVideo = useStore((s) => s.startVideo);
   const stopVideo = useStore((s) => s.stopVideo);
   const wsLink = useStore((s) => s.connection.kind === "websocket" && s.connection.state === "connected");
+  const status = useStore((s) => s.self.status);
+  const setStatus = useStore((s) => s.setStatus);
+  const trailsOn = useStore((s) => s.trailsOn);
+  const toggleTrails = useStore((s) => s.toggleTrails);
 
   const hasFix = self.lat != null && self.lng != null;
   const here = useMemo(
@@ -147,6 +165,36 @@ export function UnitsPanel() {
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-wide text-tac-muted">TÚ</span>
       </button>
+
+      <div className="flex items-center gap-2 border-b border-tac-line px-3 py-2">
+        <span className="text-[10px] uppercase tracking-wide text-tac-muted">Estado</span>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as UnitStatus)}
+          className="rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg px-2 py-1 text-xs font-semibold text-tac-text focus:border-tac-accent focus:outline-none"
+          style={{ color: STATUS_COLORS[status] }}
+        >
+          {(Object.keys(STATUS_LABELS) as UnitStatus[]).map((k) => (
+            <option key={k} value={k}>
+              {STATUS_LABELS[k]}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={toggleTrails}
+          aria-pressed={trailsOn}
+          title="Mostrar rastros de movimiento"
+          className={cn(
+            "ml-auto flex items-center gap-1.5 rounded-[var(--radius-tac)] border px-2 py-1 text-xs transition-colors",
+            trailsOn
+              ? "border-tac-accent text-tac-accent"
+              : "border-tac-line text-tac-muted hover:text-tac-text",
+          )}
+        >
+          <Route className="h-3.5 w-3.5" /> Rastros
+        </button>
+      </div>
 
       {wsLink && (
         <button

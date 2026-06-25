@@ -36,7 +36,8 @@ export function StatusBar() {
   const battery = useStore((s) => s.self.battery);
   const connState = useStore((s) => s.connection.state);
   const connKind = useStore((s) => s.connection.kind);
-  const peerCount = useStore((s) => Object.keys(s.peers).length);
+  const room = useStore((s) => s.self.room);
+  const peers = useStore((s) => s.peers);
 
   const [clock, setClock] = useState("--:--:--");
   useEffect(() => {
@@ -45,6 +46,10 @@ export function StatusBar() {
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Link health: how many teammates we've heard from recently vs total tracked.
+  const total = Object.keys(peers).length;
+  const live = Object.values(peers).filter((p) => clock && Date.now() - p.lastSeen < 30_000).length;
 
   const hasFix = lat != null && lng != null;
 
@@ -89,14 +94,16 @@ export function StatusBar() {
         <Chip className={LINK_COLOR[connState]}>
           <Signal className="h-3.5 w-3.5" />
           <span className="hidden md:inline">
-            {connKind ? TRANSPORT_LABELS[connKind] : "SIN ENLACE"} ·{" "}
+            {connKind ? TRANSPORT_LABELS[connKind] : "SIN ENLACE"}
+            {connState === "connected" && connKind === "websocket" ? ` · ${room}` : ""} ·{" "}
           </span>
           {STATE_LABELS[connState]}
         </Chip>
 
-        <Chip>
+        <Chip className={total > 0 && live === 0 ? "text-tac-warn" : undefined}>
           <Users className="h-3.5 w-3.5 text-tac-muted" />
-          {peerCount}
+          {live}
+          <span className="text-tac-muted">/{total}</span>
         </Chip>
 
         {battery != null && (

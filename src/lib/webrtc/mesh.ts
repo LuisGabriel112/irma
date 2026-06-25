@@ -1,7 +1,7 @@
 import type { SignalBody } from "@/lib/protocol/packet";
 
 /**
- * Full-mesh WebRTC manager for live peer video.
+ * Full-mesh WebRTC manager for live peer video + voice.
  *
  * Owns one RTCPeerConnection per peer. Signaling (SDP/ICE) is ferried out via a
  * callback (the store wires it to the active relay transport); the media itself
@@ -9,13 +9,14 @@ import type { SignalBody } from "@/lib/protocol/packet";
  * pattern to survive simultaneous offers (glare): the peer with the lower id is
  * polite and yields on collision.
  *
+ * Voice is push-to-talk: the mic track is added once (armed) then toggled via
+ * track.enabled, so talking is instant with no renegotiation.
+ *
  * Mesh scales to small teams (~6-8 nodes). Beyond that an SFU is needed.
  */
 
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
-  // TURN is required behind CGNAT (Starlink, most cellular). Configured at build
-  // time; absent in dev, where host-LAN peers usually connect via STUN alone.
   ...(process.env.NEXT_PUBLIC_TURN_URL
     ? [
         {
@@ -27,8 +28,9 @@ const ICE_SERVERS: RTCIceServer[] = [
     : []),
 ];
 
+export type MediaKindRtc = "video" | "audio";
 type SignalOut = (to: string, signal: SignalBody) => void;
-type OnRemote = (peerId: string, stream: MediaStream | null) => void;
+type OnRemote = (peerId: string, kind: MediaKindRtc, stream: MediaStream | null) => void;
 type OnLog = (msg: string) => void;
 
 interface PeerConn {
@@ -47,7 +49,8 @@ export function videoSupported(): boolean {
 
 export class WebRTCMesh {
   private conns = new Map<string, PeerConn>();
-  private localStream?: MediaStream;
+  private localStream?: MediaStream; // camera (video)
+  private audioStream?: MediaStream; // mic (voice)
   private selfId: string;
   private signalOut: SignalOut;
   private onRemote: OnRemote;
@@ -60,7 +63,6 @@ export class WebRTCMesh {
     this.onLog = onLog;
   }
 
-  /** Keep the routing key fresh across logout/identity changes. */
   setSelfId(id: string): void {
     this.selfId = id;
   }
@@ -69,42 +71,75 @@ export class WebRTCMesh {
     return !!this.localStream;
   }
 
-  /** Acquire the camera and start offering to the given peers. */
+  // --- camera / video ----------------------------------------------------
+
   async startBroadcast(targets: string[]): Promise<MediaStream> {
     if (!this.localStream) {
       this.localStream = await navigator.mediaDevices.getUserMedia({
-        // Prefer the rear/world camera (field use); falls back to any camera on
-        // devices with only a front one (most laptops).
         video: { facingMode: { ideal: "environment" }, width: 320, height: 240, frameRate: 15 },
         audio: false,
       });
     }
-    for (const id of targets) this.addTracksTo(this.ensureConn(id));
+    for (const id of targets) this.syncTracks(this.ensureConn(id));
     return this.localStream;
   }
 
   stopBroadcast(): void {
     this.localStream?.getTracks().forEach((t) => t.stop());
     this.localStream = undefined;
-    // Renegotiate down: drop senders. Simplest is to tear connections; peers we
-    // still watch re-open on demand when their next signal arrives.
-    for (const id of [...this.conns.keys()]) this.close(id);
+    // If voice is still armed, keep the connections; otherwise tear them down.
+    if (this.audioStream) {
+      for (const entry of this.conns.values()) this.syncTracks(entry);
+    } else {
+      for (const id of [...this.conns.keys()]) this.close(id);
+    }
   }
 
-  /** Open (or reuse) a connection so a peer's camera can arrive. */
   watch(peerId: string): void {
     this.ensureConn(peerId);
   }
-  // Note: hiding a peer's video is a UI-only concern (the `watching` flag in the
-  // store). We deliberately keep the connection + stream alive so re-watching is
-  // instant; a closed connection would need the broadcaster to re-offer.
 
-  private addTracksTo(entry: PeerConn): void {
-    if (!this.localStream) return;
-    const existing = new Set(entry.pc.getSenders().map((s) => s.track));
-    for (const track of this.localStream.getTracks()) {
-      if (!existing.has(track)) entry.pc.addTrack(track, this.localStream);
+  // --- voice (push-to-talk) ----------------------------------------------
+
+  /** Acquire the mic once and add it (muted) to every peer. */
+  async armVoice(targets: string[]): Promise<void> {
+    if (!this.audioStream) {
+      this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      this.audioStream.getAudioTracks().forEach((t) => (t.enabled = false)); // silent until PTT
     }
+    for (const id of targets) this.syncTracks(this.ensureConn(id));
+  }
+
+  /** Toggle the live mic (push-to-talk). Returns whether the mic is armed. */
+  setTalking(on: boolean): boolean {
+    if (!this.audioStream) return false;
+    this.audioStream.getAudioTracks().forEach((t) => (t.enabled = on));
+    return true;
+  }
+
+  disarmVoice(): void {
+    this.audioStream?.getTracks().forEach((t) => t.stop());
+    this.audioStream = undefined;
+    if (this.localStream) {
+      for (const entry of this.conns.values()) this.syncTracks(entry);
+    } else {
+      for (const id of [...this.conns.keys()]) this.close(id);
+    }
+  }
+
+  // --- connection plumbing -----------------------------------------------
+
+  /** Add any local tracks (camera, mic) not yet on this connection. */
+  private syncTracks(entry: PeerConn): void {
+    const live = entry.pc.getSenders().map((s) => s.track);
+    const add = (stream?: MediaStream) => {
+      if (!stream) return;
+      for (const track of stream.getTracks()) {
+        if (!live.includes(track)) entry.pc.addTrack(track, stream);
+      }
+    };
+    add(this.localStream);
+    add(this.audioStream);
   }
 
   private ensureConn(peerId: string): PeerConn {
@@ -115,9 +150,9 @@ export class WebRTCMesh {
     const entry: PeerConn = { pc, makingOffer: false, polite: this.selfId < peerId };
     this.conns.set(peerId, entry);
 
-    if (this.localStream) this.addTracksTo(entry);
+    this.syncTracks(entry);
 
-    pc.ontrack = (e) => this.onRemote(peerId, e.streams[0] ?? null);
+    pc.ontrack = (e) => this.onRemote(peerId, e.track.kind as MediaKindRtc, e.streams[0] ?? null);
     pc.onicecandidate = (e) => {
       if (e.candidate) this.signalOut(peerId, { candidate: e.candidate.toJSON() });
     };
@@ -127,15 +162,12 @@ export class WebRTCMesh {
         await pc.setLocalDescription();
         if (pc.localDescription) this.signalOut(peerId, pc.localDescription.toJSON());
       } catch (err) {
-        this.onLog(`video: negotiation error (${(err as Error).message})`);
+        this.onLog(`media: negotiation error (${(err as Error).message})`);
       } finally {
         entry.makingOffer = false;
       }
     };
     pc.onconnectionstatechange = () => {
-      // A genuinely dead link: drop the connection entirely so the broadcaster's
-      // next beacon rebuilds and re-offers it. Leaving a dead pc in the map means
-      // a peer that reopened never receives a fresh offer.
       if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
         this.close(peerId);
       }
@@ -143,37 +175,39 @@ export class WebRTCMesh {
     return entry;
   }
 
-  /** Inbound signaling from a peer (relay -> store -> here). */
   async onSignal(from: string, signal: SignalBody): Promise<void> {
     const entry = this.ensureConn(from);
     const pc = entry.pc;
     try {
       if ("candidate" in signal) {
-        await pc.addIceCandidate(signal.candidate).catch(() => {}); // ignore benign glare drops
+        await pc.addIceCandidate(signal.candidate).catch(() => {});
         return;
       }
       const collision =
         signal.type === "offer" && (entry.makingOffer || pc.signalingState !== "stable");
-      if (collision && !entry.polite) return; // impolite peer ignores the colliding offer
+      if (collision && !entry.polite) return;
       await pc.setRemoteDescription(signal);
       if (signal.type === "offer") {
         await pc.setLocalDescription();
         if (pc.localDescription) this.signalOut(from, pc.localDescription.toJSON());
       }
     } catch (err) {
-      this.onLog(`video: signal error (${(err as Error).message})`);
+      this.onLog(`media: signal error (${(err as Error).message})`);
     }
   }
 
   private close(peerId: string): void {
     this.conns.get(peerId)?.pc.close();
     this.conns.delete(peerId);
-    this.onRemote(peerId, null);
+    this.onRemote(peerId, "video", null);
+    this.onRemote(peerId, "audio", null);
   }
 
   destroy(): void {
     this.localStream?.getTracks().forEach((t) => t.stop());
+    this.audioStream?.getTracks().forEach((t) => t.stop());
     this.localStream = undefined;
+    this.audioStream = undefined;
     for (const id of [...this.conns.keys()]) this.close(id);
   }
 }

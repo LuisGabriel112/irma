@@ -1,4 +1,4 @@
-import type { Affiliation, AlertType, LatLng, MarkerType, MediaKind } from "@/lib/types";
+import type { Affiliation, AlertType, LatLng, MarkerType, MediaKind, UnitStatus } from "@/lib/types";
 
 /**
  * IRMA wire protocol.
@@ -27,6 +27,7 @@ export interface PositionPacket {
   speed?: number;
   accuracy?: number;
   battery?: number;
+  status?: UnitStatus;
   ts: number;
 }
 
@@ -143,6 +144,9 @@ const MT_REV = ["point", "line", "polygon", "circle"] as const;
 const ALT = { panic: 0, medical: 1, contact: 2 } as const;
 const ALT_REV = ["panic", "medical", "contact"] as const;
 
+const ST = { ok: 0, injured: 1, help: 2, offline: 3 } as const;
+const ST_REV = ["ok", "injured", "help", "offline"] as const;
+
 const r6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const r5 = (n: number) => Math.round(n * 1e5) / 1e5;
 
@@ -159,6 +163,7 @@ function toWire(p: Packet): Wire {
       if (p.speed != null) w.s = Math.round(p.speed * 10) / 10;
       if (p.accuracy != null) w.ac = Math.round(p.accuracy);
       if (p.battery != null) w.b = Math.round(p.battery);
+      if (p.status != null && p.status !== "ok") w.st = ST[p.status];
       return w;
     }
     case "message": {
@@ -220,6 +225,7 @@ function fromWire(w: Wire): Packet | null {
           speed: w.s != null ? Number(w.s) : undefined,
           accuracy: w.ac != null ? Number(w.ac) : undefined,
           battery: w.b != null ? Number(w.b) : undefined,
+          status: w.st != null ? ST_REV[w.st as number] : undefined,
         };
       case "message":
         return {

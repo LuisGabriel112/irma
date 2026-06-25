@@ -9,6 +9,7 @@ import type {
   MarkerType,
   MediaKind,
   Peer,
+  UnitStatus,
 } from "@/lib/types";
 import { base64Bytes, buildDataUrl, splitDataUrl } from "@/lib/util/media";
 import { decode, encode, type Packet } from "@/lib/protocol/packet";
@@ -41,6 +42,7 @@ export interface SelfState {
   team: string;
   affiliation: Affiliation; // how teammates render this unit
   room: string; // default net / room code
+  status: UnitStatus; // operational status broadcast to the team
   posManual?: boolean; // user pinned position by hand — don't let coarse GPS overwrite it
   lat?: number;
   lng?: number;
@@ -73,11 +75,18 @@ export interface StoreState {
   draft: LatLng[]; // in-progress drawing vertices (line/polygon/circle)
   setupComplete: boolean; // first-run identity setup done — gates the map
 
-  // live video (WebRTC, relay-only) — all ephemeral, never persisted
+  // live video + voice (WebRTC, relay-only) — all ephemeral, never persisted
   videoBroadcasting: boolean; // own camera is live to the mesh
   localStream: MediaStream | null; // own camera (self preview)
   watching: string[]; // peer ids whose camera we want to see
-  remoteStreams: Record<string, MediaStream>; // peerId -> inbound media
+  remoteStreams: Record<string, MediaStream>; // peerId -> inbound video
+  remoteAudio: Record<string, MediaStream>; // peerId -> inbound voice
+  voiceArmed: boolean; // mic acquired and added to peers
+  talking: boolean; // push-to-talk currently held
+
+  // breadcrumb trails (own + peers), ephemeral
+  trails: Record<string, LatLng[]>; // id -> recent positions (oldest first)
+  trailsOn: boolean; // render trails on the map
 
   // identity
   hydrateIdentity(): void;
@@ -144,11 +153,16 @@ export interface StoreState {
   clearDraft(): void;
   commitDraft(): void;
 
-  // live video
+  // live video + voice
   startVideo(): Promise<void>;
   stopVideo(): void;
   watchPeer(peerId: string): void;
   unwatchPeer(peerId: string): void;
+  setTalking(on: boolean): Promise<void>;
+
+  // unit status + trails
+  setStatus(status: UnitStatus): void;
+  toggleTrails(): void;
 
   // alerts (distress beacons)
   raiseAlert(type: AlertType): void;
@@ -160,6 +174,24 @@ export interface StoreState {
 }
 
 const now = () => Date.now();
+
+// Breadcrumb trail: cap length and skip points that barely moved, so the trail
+// stays cheap and readable. Distance check is a rough degrees threshold (~10 m).
+const TRAIL_MAX = 80;
+const TRAIL_MIN_DEG = 0.00009; // ~10 m
+function appendTrail(
+  trails: Record<string, LatLng[]>,
+  id: string,
+  p: LatLng,
+): Record<string, LatLng[]> {
+  const prev = trails[id] ?? [];
+  const last = prev[prev.length - 1];
+  if (last && Math.abs(last.lat - p.lat) < TRAIL_MIN_DEG && Math.abs(last.lng - p.lng) < TRAIL_MIN_DEG) {
+    return trails;
+  }
+  return { ...trails, [id]: [...prev, p].slice(-TRAIL_MAX) };
+}
+
 const stamp = (msg: string) =>
   `${new Date().toLocaleTimeString([], { hour12: false })} ${msg}`;
 
@@ -181,9 +213,13 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
         speed: p.speed,
         accuracy: p.accuracy,
         battery: p.battery,
+        status: p.status,
         lastSeen: p.ts || now(),
       };
-      set((s) => ({ peers: { ...s.peers, [peer.id]: peer } }));
+      set((s) => ({
+        peers: { ...s.peers, [peer.id]: peer },
+        trails: appendTrail(s.trails, peer.id, { lat: peer.lat, lng: peer.lng }),
+      }));
       break;
     }
     case "message": {
@@ -288,12 +324,13 @@ export const useStore = create<StoreState>()((set, get) => {
         encode({ kind: "signal", id: `${s.id}-${now()}`, from: s.id, to, signal, ts: now() }),
       );
     },
-    (peerId, stream) =>
+    (peerId, kind, stream) =>
       set((s) => {
-        const next = { ...s.remoteStreams };
+        const key = kind === "audio" ? "remoteAudio" : "remoteStreams";
+        const next = { ...s[key] };
         if (stream) next[peerId] = stream;
         else delete next[peerId];
-        return { remoteStreams: next };
+        return { [key]: next };
       }),
     (msg) => set((s) => ({ log: [stamp(msg), ...s.log].slice(0, 200) })),
   );
@@ -307,6 +344,7 @@ export const useStore = create<StoreState>()((set, get) => {
       team: "Cyan",
       affiliation: "friend",
       room: "alfa",
+      status: "ok",
     },
     peers: {},
     markers: {},
@@ -325,6 +363,11 @@ export const useStore = create<StoreState>()((set, get) => {
     localStream: null,
     watching: [],
     remoteStreams: {},
+    remoteAudio: {},
+    voiceArmed: false,
+    talking: false,
+    trails: {},
+    trailsOn: false,
 
     persistIdentity: () => {
       const s = get().self;
@@ -420,6 +463,7 @@ export const useStore = create<StoreState>()((set, get) => {
           team: fresh.team,
           affiliation: fresh.affiliation,
           room: fresh.room,
+          status: "ok",
         },
         peers: {},
         markers: {},
@@ -434,6 +478,10 @@ export const useStore = create<StoreState>()((set, get) => {
         localStream: null,
         watching: [],
         remoteStreams: {},
+        remoteAudio: {},
+        voiceArmed: false,
+        talking: false,
+        trails: {},
       });
     },
 
@@ -501,6 +549,10 @@ export const useStore = create<StoreState>()((set, get) => {
         localStream: null,
         watching: [],
         remoteStreams: {},
+        remoteAudio: {},
+        voiceArmed: false,
+        talking: false,
+        trails: {},
       });
     },
 
@@ -518,9 +570,11 @@ export const useStore = create<StoreState>()((set, get) => {
         speed: s.speed,
         accuracy: s.accuracy,
         battery: s.battery,
+        status: s.status,
         ts: now(),
       };
       void manager.send(encode(packet));
+      set((st) => ({ trails: appendTrail(st.trails, s.id, { lat: s.lat!, lng: s.lng! }) }));
       // Reuse the 5s beacon to pull any newly-seen peers into the video mesh.
       if (get().videoBroadcasting) void mesh.startBroadcast(Object.keys(get().peers));
     },
@@ -683,6 +737,31 @@ export const useStore = create<StoreState>()((set, get) => {
       set((s) => ({ watching: s.watching.filter((id) => id !== peerId) }));
     },
 
+    setTalking: async (on) => {
+      const conn = get().connection;
+      if (conn.kind !== "websocket" || conn.state !== "connected") return;
+      if (on && !get().voiceArmed) {
+        try {
+          await mesh.armVoice(Object.keys(get().peers));
+          set({ voiceArmed: true });
+        } catch (e) {
+          set((s) => ({
+            log: [stamp(`No se pudo abrir el micrófono: ${(e as Error).message}`), ...s.log].slice(0, 200),
+          }));
+          return;
+        }
+      }
+      mesh.setTalking(on);
+      set({ talking: on });
+    },
+
+    setStatus: (status) => {
+      set((s) => ({ self: { ...s.self, status } }));
+      if (get().connection.state === "connected") get().broadcastPosition();
+    },
+
+    toggleTrails: () => set((s) => ({ trailsOn: !s.trailsOn })),
+
     raiseAlert: (type) => {
       const s = get().self;
       if (s.lat == null || s.lng == null) {
@@ -751,7 +830,12 @@ export const useStore = create<StoreState>()((set, get) => {
         for (const [id, p] of Object.entries(s.peers)) {
           if (p.lastSeen >= cutoff) next[id] = p;
         }
-        return { peers: next };
+        // Drop trails of dropped peers; keep our own (id not in peers).
+        const trails: Record<string, LatLng[]> = {};
+        for (const [id, t] of Object.entries(s.trails)) {
+          if (next[id] || id === s.self.id) trails[id] = t;
+        }
+        return { peers: next, trails };
       });
     },
   };
