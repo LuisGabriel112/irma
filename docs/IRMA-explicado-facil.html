@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>IRMA — Explicado fácil</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #25313a; line-height: 1.6; font-size: 12px; margin: 0; background: #fff;
+  }
+  h1,h2,h3 { color: #0b3d2e; line-height: 1.2; }
+  h1 { font-size: 32px; margin: 0 0 6px; letter-spacing: -.5px; }
+  h2 {
+    font-size: 19px; margin: 28px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid #3ddc84;
+  }
+  h3 { font-size: 14px; margin: 16px 0 4px; color: #1b6b4f; }
+  p { margin: 8px 0; }
+  .lead { font-size: 14px; color: #3a4a44; }
+  .cover {
+    background: linear-gradient(135deg, #0b3d2e, #11241d);
+    color: #eafff6; padding: 42px 36px; border-radius: 14px; margin-bottom: 20px;
+  }
+  .cover h1 { color: #fff; }
+  .cover .sub { color: #9fe6c6; font-size: 15px; margin-top: 8px; }
+  .cover p { color: #d3efe2; max-width: 580px; }
+  .cover .meta { margin-top: 20px; font-size: 11px; color: #bfe9d6; }
+  .analogy {
+    background: #fff7e6; border: 1px solid #f0d48a; border-left: 5px solid #e0a93a;
+    border-radius: 8px; padding: 12px 16px; margin: 12px 0;
+  }
+  .analogy b { color: #9a6a00; }
+  .card {
+    border: 1px solid #cdddd5; border-radius: 10px; padding: 12px 16px; margin: 10px 0;
+    background: #fafdfb;
+  }
+  .grid2 { display: flex; gap: 16px; }
+  .grid2 > div { flex: 1; }
+  ul, ol { margin: 8px 0 8px 20px; padding: 0; }
+  li { margin: 5px 0; }
+  figure { margin: 14px 0; text-align: center; }
+  figcaption { font-size: 11px; color: #6b8577; margin-top: 6px; font-style: italic; }
+  svg { max-width: 100%; height: auto; }
+  .pagebreak { page-break-before: always; }
+  .pill {
+    display: inline-block; background: #0b3d2e; color: #eafff6; font-size: 10px;
+    padding: 3px 10px; border-radius: 12px; margin: 2px 4px 2px 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+  th, td { border: 1px solid #cdddd5; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #0b3d2e; color: #eafff6; }
+  tr:nth-child(even) td { background: #f4f9f6; }
+  .big-emoji { font-size: 22px; }
+  .muted { color: #6b8577; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>IRMA</h1>
+  <div class="sub">Explicado fácil — para cualquiera, sin tecnicismos</div>
+  <p style="margin-top:16px;">
+    IRMA es una app que le permite a un equipo en el campo <b>verse en un mapa en vivo</b>,
+    <b>hablarse</b> y <b>mandarse video</b> — aunque no haya señal de celular. Como un
+    walkie-talkie con mapa, pero en tu teléfono.
+  </p>
+  <div class="meta">Documento para personas no técnicas · 2026</div>
+</div>
+
+<h2>1. ¿Qué es IRMA, en una frase?</h2>
+<p class="lead">
+  Es una <b>app de mapa para equipos</b>. Cada persona aparece como un punto en el mapa de
+  todos los demás, en tiempo real. Pueden marcar lugares, mandarse mensajes, gritar una
+  alerta de emergencia y hasta transmitir la cámara — todo entre el equipo.
+</p>
+
+<div class="analogy">
+  <span class="big-emoji">🗺️</span> <b>Piénsalo así:</b> es como el "compartir ubicación" de
+  WhatsApp o Google Maps… pero hecho para un equipo completo, con herramientas de campo, y
+  que <b>sigue funcionando aunque se caiga el internet</b> (usando radios). El modelo a vencer
+  es ATAK, una app que usan militares y rescatistas — pero IRMA es más simple y bonita.
+</div>
+
+<h3>¿Para quién?</h3>
+<ul>
+  <li><b>Rescate y búsqueda</b> — ver dónde está cada brigadista en el cerro.</li>
+  <li><b>Seguridad de eventos</b> — coordinar al personal en un concierto o feria.</li>
+  <li><b>Expediciones y equipos de campo</b> — no perderse, saber quién está dónde.</li>
+</ul>
+
+<h2>2. ¿Qué puede hacer? (lo que ves en pantalla)</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>📍 Mapa en vivo</h3>
+    <p>Te ves a ti mismo como una flecha (apunta hacia dónde miras, usando la brújula del
+    teléfono) y a tus compañeros como puntos de colores.</p>
+  </div>
+  <div class="card">
+    <h3>👥 Tu equipo, por colores</h3>
+    <p>Cada quién pintado según su rol: <b>verde</b> tú, <b>azul</b> aliado, <b>rojo</b>
+    hostil, <b>gris</b> neutral, <b>amarillo</b> desconocido. Con su distancia y batería.</p>
+  </div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h3>✏️ Marcar el mapa</h3>
+    <p>Pones puntos, dibujas líneas, círculos o zonas. Todo lo que dibujas <b>les aparece a
+    todos</b> al instante.</p>
+  </div>
+  <div class="card">
+    <h3>🆘 Botón de pánico</h3>
+    <p>Un toque y tu posición empieza a <b>parpadear en el mapa de todo el equipo</b>, con
+    sonido de alerta. Para emergencias.</p>
+  </div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h3>🧭 Llévame ahí</h3>
+    <p>Eliges a un compañero o un punto y la app te dice <b>a cuánto está y hacia dónde
+    caminar</b>, en vivo.</p>
+  </div>
+  <div class="card">
+    <h3>💬 Chat y 🎥 video</h3>
+    <p>Mensajes, fotos y notas de voz al equipo. Y ahora <b>video en vivo</b> de la cámara,
+    que aparece flotando sobre el marcador de cada quién.</p>
+  </div>
+</div>
+
+<div class="pagebreak"></div>
+<h2>3. La pregunta importante: ¿cómo se conectan entre ellos?</h2>
+<p class="lead">
+  Aquí está lo interesante. IRMA puede usar <b>cuatro caminos distintos</b> para que los
+  teléfonos se hablen. Eliges el que tengas a mano.
+</p>
+
+<table>
+<tr><th>Camino</th><th>¿Qué es?</th><th>¿Cuándo lo usas?</th></tr>
+<tr><td><b>Internet</b></td><td>Se conectan a través de un servidor en la nube.</td><td>Cuando hay Wi-Fi o datos. Lo normal.</td></tr>
+<tr><td><b>Radio LoRa (cable USB)</b></td><td>Una antena de radio conectada al teléfono por cable.</td><td>Sin señal celular, en el monte.</td></tr>
+<tr><td><b>Radio LoRa (Bluetooth)</b></td><td>La misma antena, pero sin cable.</td><td>Igual, sin red, más cómodo.</td></tr>
+<tr><td><b>Demo</b></td><td>Unidades falsas de práctica.</td><td>Para probar la app sin nadie más.</td></tr>
+</table>
+
+<div class="analogy">
+  <span class="big-emoji">🔌</span> <b>Lo clave:</b> la app no cambia según el camino. Es como
+  un teléfono que sirve igual con Wi-Fi, con datos o con cable — tú solo eliges la conexión y
+  todo lo demás funciona idéntico.
+</div>
+
+<h2>4. El "relay": el punto de reunión</h2>
+<p>
+  Cuando usan <b>internet</b>, los teléfonos no se encuentran solos (cada uno está escondido
+  detrás de su red). Por eso existe el <b>relay</b>: un pequeño servidor que hace de
+  <b>cartero del equipo</b>.
+</p>
+
+<div class="analogy">
+  <span class="big-emoji">🤵</span> <b>Imagina un mesero en un salón:</b> cada teléfono entra
+  a una "sala" (un código, ej. <i>alfa</i>) y le pasa sus mensajes al mesero. El mesero los
+  <b>reparte a todos los demás de esa misma sala</b>. No lee ni entiende nada — solo copia y
+  reparte. Todos los que comparten el código se ven entre sí, vengan de la red que vengan.
+</div>
+
+<figure>
+<svg viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="11">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/></marker></defs>
+  <circle cx="320" cy="120" r="50" fill="#0b3d2e"/>
+  <text x="320" y="114" text-anchor="middle" fill="#eafff6" font-weight="700">RELAY</text>
+  <text x="320" y="132" text-anchor="middle" fill="#9fe6c6" font-size="10">(el mesero)</text>
+  <g stroke="#1b6b4f" fill="#fff">
+    <rect x="30" y="30" width="120" height="44" rx="9"/>
+    <rect x="30" y="166" width="120" height="44" rx="9"/>
+    <rect x="490" y="30" width="120" height="44" rx="9"/>
+    <rect x="490" y="166" width="120" height="44" rx="9"/>
+  </g>
+  <g text-anchor="middle" fill="#25313a">
+    <text x="90" y="50">📱 Tú</text><text x="90" y="65" font-size="9">celular</text>
+    <text x="90" y="186">📱 Compa 2</text><text x="90" y="201" font-size="9">laptop</text>
+    <text x="550" y="50">📱 Compa 3</text><text x="550" y="65" font-size="9">tablet</text>
+    <text x="550" y="186">📱 Compa 4</text><text x="550" y="201" font-size="9">celular</text>
+  </g>
+  <g stroke="#0b3d2e" stroke-width="1.4" fill="none">
+    <line x1="150" y1="52" x2="272" y2="105" marker-end="url(#a)"/>
+    <line x1="150" y1="188" x2="272" y2="138" marker-end="url(#a)"/>
+    <line x1="370" y1="105" x2="488" y2="52" marker-end="url(#a)"/>
+    <line x1="370" y1="138" x2="488" y2="188" marker-end="url(#a)"/>
+  </g>
+  <text x="320" y="226" text-anchor="middle" fill="#6b8577" font-size="10">Mismo código de sala = todos se ven en el mapa, sin importar su red.</text>
+</svg>
+<figcaption>El relay reparte los mensajitos del equipo (posiciones, chat, alertas) entre todos los de una sala.</figcaption>
+</figure>
+
+<div class="pagebreak"></div>
+<h2>5. Cuando NO hay internet: las radios</h2>
+<p>
+  En el monte sin señal, los teléfonos no pueden usar el relay. Entonces IRMA usa una
+  <b>radio LoRa</b> — una antenita de bajo consumo que manda datos muy lejos (kilómetros),
+  pero <b>poquitos a la vez</b>.
+</p>
+
+<div class="analogy">
+  <span class="big-emoji">📻</span> <b>Como un walkie-talkie de datos:</b> el teléfono le pasa
+  el mensaje a la antena (por cable o Bluetooth), la antena lo lanza por el aire, y las otras
+  antenas del equipo lo reciben y se lo pasan a sus teléfonos. Alcance largo, pero solo cabe
+  lo esencial: tu posición, un mensaje corto, una alerta. <b>Video y fotos NO caben</b> por
+  radio — son demasiado pesados.
+</div>
+
+<figure>
+<svg viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="11">
+  <defs><marker id="b" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/></marker></defs>
+  <g stroke="#1b6b4f" fill="#fff">
+    <rect x="20" y="40" width="110" height="44" rx="8"/>
+    <rect x="180" y="40" width="110" height="44" rx="8"/>
+    <rect x="350" y="40" width="110" height="44" rx="8"/>
+    <rect x="520" y="40" width="110" height="44" rx="8"/>
+  </g>
+  <g text-anchor="middle" fill="#25313a">
+    <text x="75" y="60">📱 Teléfono</text><text x="75" y="75" font-size="9">la app</text>
+    <text x="235" y="60">📡 Antena</text><text x="235" y="75" font-size="9">tu radio</text>
+    <text x="405" y="60">🌫️ Aire</text><text x="405" y="75" font-size="9">kilómetros</text>
+    <text x="575" y="60">📡 Equipo</text><text x="575" y="75" font-size="9">los demás</text>
+  </g>
+  <g stroke="#0b3d2e" stroke-width="1.4">
+    <line x1="130" y1="62" x2="178" y2="62" marker-end="url(#b)"/>
+    <line x1="290" y1="62" x2="348" y2="62" marker-end="url(#b)"/>
+    <line x1="460" y1="62" x2="518" y2="62" marker-end="url(#b)"/>
+  </g>
+</svg>
+<figcaption>Sin internet, las radios LoRa pasan lo esencial de teléfono a teléfono por el aire.</figcaption>
+</figure>
+
+<h2>6. El video en vivo: ¿cómo viaja?</h2>
+<p>
+  El video pesa <b>muchísimo</b> más que un mensaje. Si lo mandáramos por el relay (el mesero),
+  lo saturaríamos. Así que hacemos algo más listo:
+</p>
+
+<ol>
+  <li><b>Prendes tu cámara</b> — el teléfono empieza a grabar.</li>
+  <li><b>Se presentan por el relay</b> — tu teléfono y el del otro se mandan unas notitas
+  cortas por el mesero: <i>"soy yo, esta es mi dirección, así te mando video"</i>. El otro
+  contesta. Son notitas chiquitas, el relay las aguanta fácil.</li>
+  <li><b>Se hablan en privado</b> — ya que se conocen, el video va <b>directo de tu teléfono
+  al otro</b>, sin pasar por el relay. Como salirse del grupo a hablar uno a uno.</li>
+  <li><b>Aparece en el mapa</b> — el video llega y se pinta en una ventanita <b>arriba del
+  marcador</b> de quien transmite.</li>
+</ol>
+
+<figure>
+<svg viewBox="0 0 640 170" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="11">
+  <defs><marker id="c" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0b3d2e"/></marker></defs>
+  <rect x="40" y="55" width="130" height="60" rx="10" fill="#fff" stroke="#1b6b4f"/>
+  <rect x="470" y="55" width="130" height="60" rx="10" fill="#fff" stroke="#1b6b4f"/>
+  <text x="105" y="80" text-anchor="middle">📱 Tu teléfono</text>
+  <text x="105" y="98" text-anchor="middle" font-size="9" fill="#6b8577">cámara prendida</text>
+  <text x="535" y="80" text-anchor="middle">📱 El otro</text>
+  <text x="535" y="98" text-anchor="middle" font-size="9" fill="#6b8577">ve tu video</text>
+  <rect x="270" y="10" width="100" height="34" rx="17" fill="#0b3d2e"/>
+  <text x="320" y="31" text-anchor="middle" fill="#eafff6" font-size="10">RELAY</text>
+  <!-- presentación por relay -->
+  <line x1="170" y1="68" x2="278" y2="40" stroke="#6b8577" stroke-dasharray="4 3" marker-end="url(#c)"/>
+  <line x1="362" y1="40" x2="470" y2="68" stroke="#6b8577" stroke-dasharray="4 3" marker-end="url(#c)"/>
+  <text x="320" y="62" text-anchor="middle" fill="#6b8577" font-size="9">1) se presentan (notitas)</text>
+  <!-- video directo -->
+  <line x1="170" y1="100" x2="468" y2="100" stroke="#0b3d2e" stroke-width="2.4" marker-end="url(#c)"/>
+  <text x="320" y="128" text-anchor="middle" fill="#0b3d2e" font-weight="700" font-size="11">2) el video va directo, teléfono a teléfono</text>
+</svg>
+<figcaption>El relay solo los presenta. El video pesado viaja directo entre los dos teléfonos.</figcaption>
+</figure>
+
+<div class="analogy">
+  <span class="big-emoji">⚠️</span> <b>Por qué a veces el video necesita algo extra:</b> en
+  algunas redes (datos celulares, o internet satelital tipo Starlink) los teléfonos están tan
+  "escondidos" que no logran hablarse directo, aunque se hayan presentado. Para esos casos se
+  necesita un <b>ayudante extra</b> (se llama "TURN") que reenvía el video. Es lo único que
+  falta por configurar. <b>El mapa, el chat y las alertas funcionan en cualquier red sin ese
+  ayudante</b> — solo el video lo pide en redes difíciles.
+</div>
+
+<div class="pagebreak"></div>
+<h2>7. Cómo usarla, paso a paso</h2>
+<ol>
+  <li><b>Te presentas:</b> al abrir, pones tu nombre clave (ej. RAVEN-1), tu equipo y un
+  <b>código de sala</b> que comparten todos.</li>
+  <li><b>Permites tu ubicación:</b> para que el mapa sepa dónde estás. (En el teléfono usa el
+  GPS real; en una computadora puede ser impreciso.)</li>
+  <li><b>Te conectas:</b> en el panel "Enlace" eliges el camino (normalmente "Internet") y te
+  unes a la sala.</li>
+  <li><b>Ya estás:</b> tus compañeros aparecen en el mapa. Marca lugares, escribe, manda tu
+  ubicación, o prende la cámara.</li>
+</ol>
+
+<h3>Las herramientas del mapa</h3>
+<table>
+<tr><th>Botón</th><th>Para qué</th></tr>
+<tr><td>✋ Mano</td><td>Mover el mapa y tocar a alguien para ver su info.</td></tr>
+<tr><td>📍 Marcadores</td><td>Poner un punto (aliado, hostil, neutral, o un destino).</td></tr>
+<tr><td>✏️ Dibujar</td><td>Trazar líneas, zonas o círculos en el mapa.</td></tr>
+<tr><td>📏 Regla</td><td>Medir cuánto hay entre dos puntos.</td></tr>
+<tr><td>🎯 Fijar / Centrar</td><td>Poner tu posición a mano, o volver a centrarte.</td></tr>
+<tr><td>🚨 Sirena</td><td>Lanzar una alerta de pánico a todo el equipo.</td></tr>
+<tr><td>🎥 Cámara</td><td>Transmitir tu cámara, o ver la de un compañero.</td></tr>
+</table>
+
+<h2>8. ¿Y si se cae el internet a media operación?</h2>
+<p>
+  IRMA está pensada para el campo. Es una app que <b>se instala</b> en el teléfono (como una
+  app normal) y <b>guarda el mapa de las zonas que ya viste</b>. Si te quedas sin señal, la app
+  sigue abriendo y mostrando lo último, y puedes cambiar a las radios LoRa para seguir
+  comunicado. Tus marcas y mensajes quedan guardados aunque cierres la app.
+</p>
+
+<h2>9. En resumen</h2>
+<div class="card">
+  <p style="margin:4px 0;"><b>IRMA = mapa de equipo en vivo, que funciona con o sin internet.</b></p>
+  <ul style="margin-top:6px;">
+    <li>Ves a tu equipo y ellos te ven a ti, en tiempo real.</li>
+    <li>Marcas el mapa, chateas, mandas fotos, voz y <b>video en vivo</b>.</li>
+    <li>Botón de pánico y navegación hacia compañeros.</li>
+    <li>Con internet usa un <b>relay</b> (un cartero en la nube). Sin internet, usa <b>radios</b>.</li>
+    <li>El video pesado viaja <b>directo entre teléfonos</b>; el relay solo los presenta.</li>
+  </ul>
+</div>
+
+<p class="muted" style="margin-top:24px; border-top:1px solid #cdddd5; padding-top:10px; font-size:11px;">
+  IRMA — proyecto civil y educativo de conciencia situacional. No está afiliado a ningún
+  gobierno ni organización militar. Documento pensado para explicar la app a cualquier persona.
+</p>
+
+</body>
+</html>

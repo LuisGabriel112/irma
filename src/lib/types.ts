@@ -2,6 +2,23 @@
 
 export type Affiliation = "self" | "friend" | "neutral" | "hostile" | "unknown";
 
+/** Operational status a unit reports alongside its position. */
+export type UnitStatus = "ok" | "injured" | "help" | "offline";
+
+export const STATUS_LABELS: Record<UnitStatus, string> = {
+  ok: "OK",
+  injured: "HERIDO",
+  help: "AYUDA",
+  offline: "FUERA",
+};
+
+export const STATUS_COLORS: Record<UnitStatus, string> = {
+  ok: "#3ddc84",
+  injured: "#ff4d4d",
+  help: "#ffb020",
+  offline: "#7c8b84",
+};
+
 export interface LatLng {
   lat: number;
   lng: number;
@@ -18,6 +35,7 @@ export interface Peer {
   speed?: number; // m/s
   accuracy?: number; // meters (GPS CE)
   battery?: number; // 0-100
+  status?: UnitStatus; // self-reported operational status
   team?: string;
   lastSeen: number; // epoch ms
 }

@@ -7,6 +7,8 @@ import { StatusBar } from "@/components/StatusBar";
 import { ToolDock } from "@/components/ToolDock";
 import { SidePanel } from "@/components/SidePanel";
 import { SetupGate } from "@/components/SetupGate";
+import { RemoteAudio } from "@/components/RemoteAudio";
+import { VoicePtt } from "@/components/VoicePtt";
 import { AlertBanner, DrawControls, NavHud } from "@/components/MapHud";
 
 // MapLibre touches `window` at import — load it browser-only.
@@ -163,6 +165,8 @@ export function AppShell() {
           <DrawControls />
           <NavHud />
           <AlertBanner />
+          <VoicePtt />
+          <RemoteAudio />
           {!setupComplete && <SetupGate />}
         </>
       )}
