@@ -88,7 +88,17 @@ function Stream({ stream }: { stream: MediaStream }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const el = ref.current;
-    if (el && el.srcObject !== stream) el.srcObject = stream;
+    if (!el) return;
+    if (el.srcObject !== stream) el.srcObject = stream;
+    // Mobile browsers (iOS/Android) don't honor the autoPlay attribute for a
+    // MediaStream the way desktop does — the element stays black until play() is
+    // called explicitly. muted + playsInline keeps it gesture-free. Retry once
+    // metadata is ready in case the stream attached before the element painted.
+    el.muted = true;
+    const play = () => el.play().catch(() => {});
+    play();
+    el.addEventListener("loadedmetadata", play);
+    return () => el.removeEventListener("loadedmetadata", play);
   }, [stream]);
   return (
     <video
