@@ -73,7 +73,9 @@ export class WebRTCMesh {
   async startBroadcast(targets: string[]): Promise<MediaStream> {
     if (!this.localStream) {
       this.localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 320, height: 240, frameRate: 15 },
+        // Prefer the rear/world camera (field use); falls back to any camera on
+        // devices with only a front one (most laptops).
+        video: { facingMode: { ideal: "environment" }, width: 320, height: 240, frameRate: 15 },
         audio: false,
       });
     }
