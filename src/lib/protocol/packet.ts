@@ -80,6 +80,24 @@ export interface AlertPacket {
 }
 
 /**
+ * WebRTC signaling envelope (SDP offer/answer or ICE candidate). Carries the
+ * handshake for peer-to-peer live video; the media itself never touches the
+ * relay. Several KB per frame — relay-only, never sent over a LoRa link.
+ */
+export type SignalBody =
+  | RTCSessionDescriptionInit
+  | { candidate: RTCIceCandidateInit };
+
+export interface SignalPacket {
+  kind: "signal";
+  id: string;
+  from: string; // sender peer id (self.id — stable routing key)
+  to: string; // recipient peer id (signaling is always addressed)
+  signal: SignalBody;
+  ts: number;
+}
+
+/**
  * Chat attachment (image / voice clip). Far larger than a LoRa frame, so this
  * only travels over the WebSocket relay; the LoRa links never see it.
  */
@@ -103,12 +121,13 @@ export type Packet =
   | MarkerDeletePacket
   | PingPacket
   | AlertPacket
-  | MediaPacket;
+  | MediaPacket
+  | SignalPacket;
 
 // --- compact codec -------------------------------------------------------
 
-const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5, media: 6 } as const;
-const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert", "media"] as const;
+const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5, media: 6, signal: 7 } as const;
+const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert", "media", "signal"] as const;
 
 const MK = { image: 0, audio: 1 } as const;
 const MK_REV = ["image", "audio"] as const;
@@ -182,6 +201,8 @@ function toWire(p: Packet): Wire {
       if (p.dur != null) w.du = Math.round(p.dur * 10) / 10;
       return w;
     }
+    case "signal":
+      return { t: TYPE.signal, i: p.id, f: p.from, o: p.to, g: JSON.stringify(p.signal), ts: p.ts };
   }
 }
 
@@ -241,6 +262,11 @@ function fromWire(w: Wire): Packet | null {
           caption: w.x != null ? String(w.x) : undefined,
           dur: w.du != null ? Number(w.du) : undefined,
           ts: Number(w.ts),
+        };
+      case "signal":
+        return {
+          kind, id: String(w.i), from: String(w.f), to: String(w.o),
+          signal: JSON.parse(String(w.g)) as SignalBody, ts: Number(w.ts),
         };
     }
   } catch {
