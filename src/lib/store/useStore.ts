@@ -673,12 +673,9 @@ export const useStore = create<StoreState>()((set, get) => {
       set((s) => (s.watching.includes(peerId) ? {} : { watching: [...s.watching, peerId] }));
     },
     unwatchPeer: (peerId) => {
-      mesh.unwatch(peerId);
-      set((s) => {
-        const next = { ...s.remoteStreams };
-        delete next[peerId];
-        return { watching: s.watching.filter((id) => id !== peerId), remoteStreams: next };
-      });
+      // UI-only: stop showing the thumbnail. Keep the connection + stream so
+      // re-watching is instant (no need for the broadcaster to re-offer).
+      set((s) => ({ watching: s.watching.filter((id) => id !== peerId) }));
     },
 
     raiseAlert: (type) => {

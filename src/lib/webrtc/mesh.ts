@@ -91,15 +91,13 @@ export class WebRTCMesh {
     for (const id of [...this.conns.keys()]) this.close(id);
   }
 
-  /** Open (or reuse) a receive-only connection to watch a peer's camera. */
+  /** Open (or reuse) a connection so a peer's camera can arrive. */
   watch(peerId: string): void {
     this.ensureConn(peerId);
   }
-
-  unwatch(peerId: string): void {
-    // Only close if we are not broadcasting to them; otherwise keep the uplink.
-    if (!this.localStream) this.close(peerId);
-  }
+  // Note: hiding a peer's video is a UI-only concern (the `watching` flag in the
+  // store). We deliberately keep the connection + stream alive so re-watching is
+  // instant; a closed connection would need the broadcaster to re-offer.
 
   private addTracksTo(entry: PeerConn): void {
     if (!this.localStream) return;
@@ -135,8 +133,11 @@ export class WebRTCMesh {
       }
     };
     pc.onconnectionstatechange = () => {
+      // A genuinely dead link: drop the connection entirely so the broadcaster's
+      // next beacon rebuilds and re-offers it. Leaving a dead pc in the map means
+      // a peer that reopened never receives a fresh offer.
       if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
-        this.onRemote(peerId, null);
+        this.close(peerId);
       }
     };
     return entry;
