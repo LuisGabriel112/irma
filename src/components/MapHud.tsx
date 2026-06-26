@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Check, Navigation, Siren, Undo2, X } from "lucide-react";
+import { ArrowRightFromLine, ArrowRightToLine, Check, Navigation, Siren, Undo2, X } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Button } from "@/components/ui";
-import { ALERT_LABELS, type LatLng } from "@/lib/types";
-import { bearing, compass, formatDistance, haversine } from "@/lib/geo/utils";
+import { ALERT_LABELS, type FenceEvent, type LatLng } from "@/lib/types";
+import { bearing, compass, formatDistance, formatGrid, haversine } from "@/lib/geo/utils";
 
 const DRAW_HINTS: Record<string, string> = {
   "draw-line": "Toca el mapa para añadir vértices. Termina para guardar la línea.",
@@ -168,22 +168,102 @@ export function AlertBanner() {
   );
 }
 
-// Short attention beep via WebAudio — no asset, works offline.
-function beep() {
+// Short attention beep via WebAudio — no asset, works offline. `from`/`to` set
+// the two-tone sweep so callers can give distinct events distinct signatures.
+function beep(from = 880, to = 660) {
   try {
     const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "square";
-    osc.frequency.value = 880;
+    osc.frequency.value = from;
     gain.gain.value = 0.06;
     osc.connect(gain).connect(ctx.destination);
     osc.start();
-    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.12);
+    osc.frequency.setValueAtTime(to, ctx.currentTime + 0.12);
     osc.stop(ctx.currentTime + 0.24);
     osc.onended = () => ctx.close();
   } catch {
     /* audio blocked (no user gesture yet) — non-fatal */
   }
+}
+
+/**
+ * Geofence breach banners — slide in top-centre when a unit crosses a fence,
+ * beep (rising tone on entry, falling on exit, distinct from the distress
+ * siren), and auto-dismiss. "Ir" recentres on where the crossing happened.
+ */
+export function GeofenceBanner() {
+  const events = useStore((s) => s.fenceEvents);
+  const seen = useRef<Set<string>>(new Set());
+
+  // Beep once per newly-arrived event, with a tone that encodes the direction.
+  useEffect(() => {
+    for (const e of events) {
+      if (seen.current.has(e.id)) continue;
+      seen.current.add(e.id);
+      beep(e.dir === "enter" ? 620 : 990, e.dir === "enter" ? 990 : 440);
+    }
+    // Forget ids no longer in the list so a future reuse can beep again.
+    if (seen.current.size > 32) seen.current = new Set(events.map((e) => e.id));
+  }, [events]);
+
+  if (events.length === 0) return null;
+
+  return (
+    <div className="pointer-events-auto absolute left-1/2 top-[calc(var(--statusbar-h)+0.5rem)] z-40 flex w-[min(92vw,28rem)] -translate-x-1/2 flex-col gap-1.5">
+      {events.map((e) => (
+        <FenceRow key={e.id} event={e} />
+      ))}
+    </div>
+  );
+}
+
+const FENCE_BANNER_MS = 8000;
+
+function FenceRow({ event }: { event: FenceEvent }) {
+  const clearFenceEvent = useStore((s) => s.clearFenceEvent);
+  const requestFlyTo = useStore((s) => s.requestFlyTo);
+  const selfId = useStore((s) => s.self.id);
+
+  useEffect(() => {
+    const t = setTimeout(() => clearFenceEvent(event.id), FENCE_BANNER_MS);
+    return () => clearTimeout(t);
+  }, [event.id, clearFenceEvent]);
+
+  const entered = event.dir === "enter";
+  const isSelf = event.unitId === selfId;
+  return (
+    <div className="flex items-center gap-2.5 rounded-[var(--radius-tac)] border border-tac-warn/60 bg-tac-warn/15 px-3 py-2 backdrop-blur-md">
+      {entered ? (
+        <ArrowRightToLine className="h-5 w-5 shrink-0 text-tac-warn" />
+      ) : (
+        <ArrowRightFromLine className="h-5 w-5 shrink-0 text-tac-warn" />
+      )}
+      <div className="min-w-0 flex-1 leading-tight">
+        <div className="font-mono text-sm font-semibold text-tac-warn">
+          ⬡ {isSelf ? "TÚ" : event.unitName} {entered ? "ENTRÓ a" : "SALIÓ de"} {event.zone}
+        </div>
+        <div className="font-mono text-[11px] tabular-nums text-tac-muted">
+          {formatGrid(event.lat, event.lng)}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => requestFlyTo(event.fenceId)}
+        className="text-[11px] font-semibold uppercase tracking-wide text-tac-warn hover:underline"
+      >
+        Ir
+      </button>
+      <button
+        type="button"
+        onClick={() => clearFenceEvent(event.id)}
+        aria-label="Descartar aviso"
+        className="text-tac-muted hover:text-tac-text"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
 }

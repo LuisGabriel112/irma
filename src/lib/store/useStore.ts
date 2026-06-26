@@ -4,6 +4,7 @@ import type {
   Alert,
   AlertType,
   ChatMessage,
+  FenceEvent,
   LatLng,
   Marker,
   MarkerType,
@@ -93,6 +94,7 @@ export interface StoreState {
   // geofencing (ephemeral): per-fence, per-unit inside/outside, last evaluation
   fenceState: Record<string, Record<string, boolean>>; // fenceId -> unitId -> inside
   fenceFlash: Record<string, number>; // fenceId -> ts of last breach (map pulse)
+  fenceEvents: FenceEvent[]; // recent breaches surfaced as banners (newest first)
 
   // identity
   hydrateIdentity(): void;
@@ -173,6 +175,7 @@ export interface StoreState {
   toggleTrails(): void;
   toggleGrid(): void;
   toggleGeofence(id: string): void; // mark/unmark a polygon/circle marker as a fence
+  clearFenceEvent(id: string): void; // dismiss a geofence breach banner
 
   // alerts (distress beacons)
   raiseAlert(type: AlertType): void;
@@ -229,9 +232,11 @@ function evaluateFences(get: () => StoreState, set: SetFn): void {
   const nextState: Record<string, Record<string, boolean>> = {};
   const flash: Record<string, number> = { ...st.fenceFlash };
   const logs: string[] = [];
+  const events: FenceEvent[] = [];
   for (const f of fences) {
     const prev = st.fenceState[f.id] ?? {};
     const cur: Record<string, boolean> = {};
+    const zone = f.label ?? "geocerca";
     for (const u of units) {
       const pt = { lat: u.lat, lng: u.lng };
       const inside =
@@ -240,8 +245,20 @@ function evaluateFences(get: () => StoreState, set: SetFn): void {
           : pointInPolygon(pt, f.coords);
       cur[u.id] = inside;
       if (prev[u.id] !== undefined && prev[u.id] !== inside) {
-        logs.push(`⬡ ${u.name} ${inside ? "ENTRÓ a" : "SALIÓ de"} ${f.label ?? "geocerca"}`);
-        flash[f.id] = now();
+        const ts = now();
+        logs.push(`⬡ ${u.name} ${inside ? "ENTRÓ a" : "SALIÓ de"} ${zone}`);
+        flash[f.id] = ts;
+        events.push({
+          id: `${f.id}-${u.id}-${ts}`,
+          fenceId: f.id,
+          zone,
+          unitId: u.id,
+          unitName: u.name,
+          dir: inside ? "enter" : "exit",
+          lat: u.lat,
+          lng: u.lng,
+          ts,
+        });
       }
     }
     nextState[f.id] = cur;
@@ -249,6 +266,7 @@ function evaluateFences(get: () => StoreState, set: SetFn): void {
   set((s) => ({
     fenceState: nextState,
     fenceFlash: flash,
+    ...(events.length ? { fenceEvents: [...events, ...s.fenceEvents].slice(0, 8) } : {}),
     ...(logs.length ? { log: [...logs.map(stamp), ...s.log].slice(0, 200) } : {}),
   }));
 }
@@ -430,6 +448,7 @@ export const useStore = create<StoreState>()((set, get) => {
     gridOn: false,
     fenceState: {},
     fenceFlash: {},
+    fenceEvents: [],
 
     persistIdentity: () => {
       const s = get().self;
@@ -550,6 +569,7 @@ export const useStore = create<StoreState>()((set, get) => {
         trails: {},
         fenceState: {},
         fenceFlash: {},
+        fenceEvents: [],
       });
     },
 
@@ -629,6 +649,7 @@ export const useStore = create<StoreState>()((set, get) => {
         trails: {},
         fenceState: {},
         fenceFlash: {},
+        fenceEvents: [],
       });
     },
 
@@ -881,6 +902,9 @@ export const useStore = create<StoreState>()((set, get) => {
       );
       evaluateFences(get, set);
     },
+
+    clearFenceEvent: (id) =>
+      set((s) => ({ fenceEvents: s.fenceEvents.filter((e) => e.id !== id) })),
 
     raiseAlert: (type) => {
       const s = get().self;

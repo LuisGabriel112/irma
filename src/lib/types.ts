@@ -76,6 +76,19 @@ export const ALERT_LABELS: Record<AlertType, string> = {
   contact: "CONTACTO",
 };
 
+/** A unit crossing a geofence boundary — surfaced as a transient banner + beep. */
+export interface FenceEvent {
+  id: string;
+  fenceId: string;
+  zone: string; // fence label (or "geocerca")
+  unitId: string;
+  unitName: string; // callsign
+  dir: "enter" | "exit";
+  lat: number; // unit position at the crossing
+  lng: number;
+  ts: number;
+}
+
 export type MediaKind = "image" | "audio";
 
 /** An attachment on a chat message. Relay-only (too large for LoRa frames). */

@@ -317,6 +317,18 @@ export default function MapView() {
     // Guard against an absurd line count (e.g. a wrong zone at low zoom).
     if ((maxE - minE) / spacing > 80 || (maxN - minN) / spacing > 80) return;
 
+    // Labels ride the *visible* edge (lines extend into the padded margin, so
+    // anchoring a label at a line's padded end would push it off-screen). Inset
+    // slightly so the text sits inside the viewport instead of on the very edge.
+    const vc = (() => {
+      const vb = map.getBounds();
+      return [vb.getNorthWest(), vb.getNorthEast(), vb.getSouthWest(), vb.getSouthEast()].map((c) =>
+        toUTM(c.lat, c.lng, zone),
+      );
+    })();
+    const labelN = Math.max(...vc.map((c) => c.n)) - (maxN - minN) * 0.02; // near top
+    const labelE = Math.min(...vc.map((c) => c.e)) + (maxE - minE) * 0.02; // near left
+
     const STEPS = 8; // polyline samples per line, so it curves smoothly
     const lineStyle: L.PolylineOptions = {
       color: GRID_COLOR,
@@ -330,8 +342,8 @@ export default function MapView() {
         spacing === 1000 ? 2 : 1,
         "0",
       );
-    const tick = (text: string, at: L.LatLngExpression) =>
-      L.marker(at, {
+    const tick = (text: string, lat: number, lng: number) =>
+      L.marker([lat, lng], {
         interactive: false,
         icon: L.divIcon({ className: "irma-grid-label", html: esc(text), iconSize: [0, 0] }),
       }).addTo(layer);
@@ -343,7 +355,10 @@ export default function MapView() {
         pts.push([p.lat, p.lng]);
       }
       L.polyline(pts, lineStyle).addTo(layer);
-      if (spacing < 100000) tick(label(e), pts[pts.length - 1]); // top edge
+      if (spacing < 100000) {
+        const lp = fromUTM({ zone, north, e, n: labelN }); // top of visible area
+        tick(label(e), lp.lat, lp.lng);
+      }
     }
     for (let n = Math.ceil(minN / spacing) * spacing; n <= maxN; n += spacing) {
       const pts: [number, number][] = [];
@@ -352,7 +367,10 @@ export default function MapView() {
         pts.push([p.lat, p.lng]);
       }
       L.polyline(pts, lineStyle).addTo(layer);
-      if (spacing < 100000) tick(label(n), pts[0]); // left edge
+      if (spacing < 100000) {
+        const lp = fromUTM({ zone, north, e: labelE, n }); // left of visible area
+        tick(label(n), lp.lat, lp.lng);
+      }
     }
   }
 
