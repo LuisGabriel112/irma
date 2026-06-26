@@ -53,6 +53,7 @@ export interface Marker {
   color?: string; // hex; defaults derived from affiliation
   symbol?: string; // icon key for points
   remark?: string;
+  geofence?: boolean; // monitor unit enter/exit (polygon/circle only)
   createdBy: string; // callsign
   createdAt: number;
 }

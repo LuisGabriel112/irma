@@ -13,7 +13,7 @@ import type {
 } from "@/lib/types";
 import { base64Bytes, buildDataUrl, splitDataUrl } from "@/lib/util/media";
 import { decode, encode, type Packet } from "@/lib/protocol/packet";
-import { haversine } from "@/lib/geo/utils";
+import { haversine, pointInCircle, pointInPolygon } from "@/lib/geo/utils";
 import { WebRTCMesh } from "@/lib/webrtc/mesh";
 import { TransportManager } from "@/lib/transport/manager";
 import type {
@@ -90,6 +90,10 @@ export interface StoreState {
   trailsOn: boolean; // render trails on the map
   gridOn: boolean; // render the MGRS grid overlay
 
+  // geofencing (ephemeral): per-fence, per-unit inside/outside, last evaluation
+  fenceState: Record<string, Record<string, boolean>>; // fenceId -> unitId -> inside
+  fenceFlash: Record<string, number>; // fenceId -> ts of last breach (map pulse)
+
   // identity
   hydrateIdentity(): void;
   persistIdentity(): void;
@@ -147,6 +151,7 @@ export interface StoreState {
     label?: string;
     remark?: string;
     color?: string;
+    geofence?: boolean;
   }): Marker;
   removeMarker(id: string): void;
 
@@ -167,6 +172,7 @@ export interface StoreState {
   setStatus(status: UnitStatus): void;
   toggleTrails(): void;
   toggleGrid(): void;
+  toggleGeofence(id: string): void; // mark/unmark a polygon/circle marker as a fence
 
   // alerts (distress beacons)
   raiseAlert(type: AlertType): void;
@@ -198,6 +204,54 @@ function appendTrail(
 
 const stamp = (msg: string) =>
   `${new Date().toLocaleTimeString([], { hour12: false })} ${msg}`;
+
+// Re-evaluate every geofence against every known unit (self + peers) and emit a
+// log line whenever a unit crosses a boundary. Idempotent: only transitions vs
+// the previous evaluation fire, so calling it on each position update is cheap.
+// A first sighting (no prior state) seeds silently — no spurious "entered".
+function evaluateFences(get: () => StoreState, set: SetFn): void {
+  const st = get();
+  const fences = Object.values(st.markers).filter(
+    (m) => m.geofence && (m.type === "polygon" || m.type === "circle"),
+  );
+  if (fences.length === 0) {
+    if (Object.keys(st.fenceState).length) set({ fenceState: {}, fenceFlash: {} });
+    return;
+  }
+  const units: Array<{ id: string; name: string; lat: number; lng: number }> = [];
+  if (st.self.lat != null && st.self.lng != null) {
+    units.push({ id: st.self.id, name: st.self.callsign, lat: st.self.lat, lng: st.self.lng });
+  }
+  for (const p of Object.values(st.peers)) {
+    units.push({ id: p.id, name: p.callsign, lat: p.lat, lng: p.lng });
+  }
+
+  const nextState: Record<string, Record<string, boolean>> = {};
+  const flash: Record<string, number> = { ...st.fenceFlash };
+  const logs: string[] = [];
+  for (const f of fences) {
+    const prev = st.fenceState[f.id] ?? {};
+    const cur: Record<string, boolean> = {};
+    for (const u of units) {
+      const pt = { lat: u.lat, lng: u.lng };
+      const inside =
+        f.type === "circle"
+          ? pointInCircle(pt, f.coords[0], f.radius ?? 0)
+          : pointInPolygon(pt, f.coords);
+      cur[u.id] = inside;
+      if (prev[u.id] !== undefined && prev[u.id] !== inside) {
+        logs.push(`⬡ ${u.name} ${inside ? "ENTRÓ a" : "SALIÓ de"} ${f.label ?? "geocerca"}`);
+        flash[f.id] = now();
+      }
+    }
+    nextState[f.id] = cur;
+  }
+  set((s) => ({
+    fenceState: nextState,
+    fenceFlash: flash,
+    ...(logs.length ? { log: [...logs.map(stamp), ...s.log].slice(0, 200) } : {}),
+  }));
+}
 
 function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
   switch (p.kind) {
@@ -249,6 +303,7 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
         color: p.color,
         symbol: p.symbol,
         remark: p.remark,
+        geofence: p.geofence,
         createdBy: p.by,
         createdAt: p.ts || now(),
       };
@@ -373,6 +428,8 @@ export const useStore = create<StoreState>()((set, get) => {
     trails: {},
     trailsOn: false,
     gridOn: false,
+    fenceState: {},
+    fenceFlash: {},
 
     persistIdentity: () => {
       const s = get().self;
@@ -491,6 +548,8 @@ export const useStore = create<StoreState>()((set, get) => {
         voiceArmed: false,
         talking: false,
         trails: {},
+        fenceState: {},
+        fenceFlash: {},
       });
     },
 
@@ -500,7 +559,7 @@ export const useStore = create<StoreState>()((set, get) => {
     setNavTarget: (navTargetId) => set({ navTargetId }),
     markRead: () => set({ unread: 0 }),
 
-    setSelfPosition: (p) =>
+    setSelfPosition: (p) => {
       set((s) => ({
         self: {
           ...s.self,
@@ -511,7 +570,9 @@ export const useStore = create<StoreState>()((set, get) => {
           accuracy: p.accuracy,
           gpsTs: now(),
         },
-      })),
+      }));
+      evaluateFences(get, set);
+    },
     setSelfPositionManual: (lat, lng) => {
       set((s) => ({
         self: {
@@ -525,6 +586,7 @@ export const useStore = create<StoreState>()((set, get) => {
         followSelf: true,
       }));
       get().persistIdentity(); // remember the pinned spot across reloads
+      evaluateFences(get, set);
     },
     setBattery: (battery) => set((s) => ({ self: { ...s.self, battery } })),
 
@@ -565,6 +627,8 @@ export const useStore = create<StoreState>()((set, get) => {
         voiceArmed: false,
         talking: false,
         trails: {},
+        fenceState: {},
+        fenceFlash: {},
       });
     },
 
@@ -668,6 +732,7 @@ export const useStore = create<StoreState>()((set, get) => {
         radius: input.radius,
         color: input.color,
         remark: input.remark,
+        geofence: input.geofence,
         createdBy: s.callsign,
         createdAt: now(),
       };
@@ -683,10 +748,12 @@ export const useStore = create<StoreState>()((set, get) => {
           radius: marker.radius,
           color: marker.color,
           remark: marker.remark,
+          geofence: marker.geofence,
           by: marker.createdBy,
           ts: marker.createdAt,
         }),
       );
+      if (marker.geofence) evaluateFences(get, set);
       return marker;
     },
 
@@ -781,6 +848,40 @@ export const useStore = create<StoreState>()((set, get) => {
 
     toggleGrid: () => set((s) => ({ gridOn: !s.gridOn })),
 
+    toggleGeofence: (id) => {
+      const m = get().markers[id];
+      if (!m || (m.type !== "polygon" && m.type !== "circle")) return;
+      const next: Marker = { ...m, geofence: !m.geofence };
+      set((s) => {
+        // Clearing a fence drops its tracked state so re-enabling re-seeds clean.
+        const fenceState = { ...s.fenceState };
+        const fenceFlash = { ...s.fenceFlash };
+        if (!next.geofence) {
+          delete fenceState[id];
+          delete fenceFlash[id];
+        }
+        return { markers: { ...s.markers, [id]: next }, fenceState, fenceFlash };
+      });
+      // Re-broadcast so the whole net monitors the same zone.
+      void manager.send(
+        encode({
+          kind: "marker",
+          id: next.id,
+          markerType: next.type,
+          affiliation: next.affiliation,
+          label: next.label,
+          coords: next.coords,
+          radius: next.radius,
+          color: next.color,
+          remark: next.remark,
+          geofence: next.geofence,
+          by: next.createdBy,
+          ts: now(),
+        }),
+      );
+      evaluateFences(get, set);
+    },
+
     raiseAlert: (type) => {
       const s = get().self;
       if (s.lat == null || s.lng == null) {
@@ -827,7 +928,11 @@ export const useStore = create<StoreState>()((set, get) => {
         if (!s.markers[id]) return {};
         const next = { ...s.markers };
         delete next[id];
-        return { markers: next };
+        const fenceState = { ...s.fenceState };
+        const fenceFlash = { ...s.fenceFlash };
+        delete fenceState[id];
+        delete fenceFlash[id];
+        return { markers: next, fenceState, fenceFlash };
       });
       void manager.send(encode({ kind: "marker-delete", id, ts: now() }));
     },
@@ -840,6 +945,10 @@ export const useStore = create<StoreState>()((set, get) => {
         return;
       }
       applyPacket(get(), packet, set);
+      // A moved peer or a (re)defined zone can trip a geofence boundary.
+      if (packet.kind === "position" || packet.kind === "marker" || packet.kind === "marker-delete") {
+        evaluateFences(get, set);
+      }
     },
 
     pruneStale: (maxAgeMs = 5 * 60_000) => {

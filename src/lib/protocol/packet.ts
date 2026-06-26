@@ -51,6 +51,7 @@ export interface MarkerPacket {
   color?: string;
   symbol?: string;
   remark?: string;
+  geofence?: boolean;
   by: string;
   ts: number;
 }
@@ -181,6 +182,7 @@ function toWire(p: Packet): Wire {
       if (p.color) w.cl = p.color;
       if (p.symbol) w.sy = p.symbol;
       if (p.remark) w.r = p.remark;
+      if (p.geofence) w.gf = 1;
       return w;
     }
     case "marker-delete":
@@ -243,6 +245,7 @@ function fromWire(w: Wire): Packet | null {
           color: w.cl != null ? String(w.cl) : undefined,
           symbol: w.sy != null ? String(w.sy) : undefined,
           remark: w.r != null ? String(w.r) : undefined,
+          geofence: w.gf === 1 ? true : undefined,
           by: String(w.by), ts: Number(w.ts),
         };
       case "marker-delete":

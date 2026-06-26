@@ -68,6 +68,7 @@ export default function MapView() {
   const trailsOn = useStore((s) => s.trailsOn);
   const gridOn = useStore((s) => s.gridOn);
   const markers = useStore((s) => s.markers);
+  const fenceFlash = useStore((s) => s.fenceFlash);
   const alerts = useStore((s) => s.alerts);
   const draft = useStore((s) => s.draft);
   const navTargetId = useStore((s) => s.navTargetId);
@@ -291,6 +292,7 @@ export default function MapView() {
   // tiny shear at a zone seam, but correct for any local AO. Spacing shrinks with
   // zoom (100 km / 10 km / 1 km); labels show the MGRS principal digits.
   const GRID_COLOR = "#5eead4"; // teal — distinct from affiliation/marker colors
+  const GEOFENCE_COLOR = "#ffb020"; // amber — geofence zones
   function pushGrid() {
     const layer = gridLayerRef.current;
     const map = mapRef.current;
@@ -358,11 +360,15 @@ export default function MapView() {
     const layer = markersLayerRef.current;
     if (!layer || !mapRef.current) return; // bail if the map was torn down (logout/unmount)
     layer.clearLayers();
+    const fenceFlash = useStore.getState().fenceFlash;
     for (const m of Object.values(useStore.getState().markers)) {
-      const color = m.color ?? AFFILIATION_COLORS[m.affiliation];
+      // A geofence reads in amber and pulses briefly when a unit breaches it.
+      const fence = !!m.geofence && (m.type === "circle" || m.type === "polygon");
+      const color = fence ? GEOFENCE_COLOR : m.color ?? AFFILIATION_COLORS[m.affiliation];
+      const fenceClass = fence && Date.now() - (fenceFlash[m.id] ?? 0) < 5000 ? "irma-alert-pulse" : undefined;
       const popup =
-        `<div class="irma-pop"><div class="irma-pop-h" style="color:${color}">${esc(m.label ?? "Marcador")}</div>` +
-        `<div class="irma-pop-r">${AFFILIATION_LABELS[m.affiliation]} · por ${esc(m.createdBy)}</div>` +
+        `<div class="irma-pop"><div class="irma-pop-h" style="color:${color}">${esc(m.label ?? "Marcador")}${fence ? " ⬡" : ""}</div>` +
+        `<div class="irma-pop-r">${fence ? "GEOCERCA · " : ""}${AFFILIATION_LABELS[m.affiliation]} · por ${esc(m.createdBy)}</div>` +
         (m.remark ? `<div class="irma-pop-r">${esc(m.remark)}</div>` : "") +
         `<div class="irma-pop-r irma-grid">${esc(formatGrid(m.coords[0].lat, m.coords[0].lng))}</div></div>`;
       if (m.type === "point") {
@@ -387,19 +393,33 @@ export default function MapView() {
         const circle = L.circle([m.coords[0].lat, m.coords[0].lng], {
           radius: m.radius ?? 0,
           color,
-          weight: 2,
+          weight: fence ? 2.5 : 2,
           fillColor: color,
-          fillOpacity: 0.1,
+          fillOpacity: fence ? 0.06 : 0.1,
           dashArray: "4 3",
+          className: fenceClass,
         });
+        if (fence && m.label) {
+          circle.bindTooltip(`<span style="color:${color}">⬡ ${esc(m.label)}</span>`, {
+            permanent: true, direction: "center", className: "irma-tip",
+          });
+        }
         circle.bindPopup(popup);
         circle.addTo(layer);
       } else {
         const latlngs = m.coords.map((c) => [c.lat, c.lng]) as [number, number][];
         const shape =
           m.type === "polygon"
-            ? L.polygon(latlngs, { color, weight: 2, fillColor: color, fillOpacity: 0.15, dashArray: "4 3" })
+            ? L.polygon(latlngs, {
+                color, weight: fence ? 2.5 : 2, fillColor: color,
+                fillOpacity: fence ? 0.08 : 0.15, dashArray: "4 3", className: fenceClass,
+              })
             : L.polyline(latlngs, { color, weight: 2, dashArray: "4 3" });
+        if (fence && m.label && m.type === "polygon") {
+          shape.bindTooltip(`<span style="color:${color}">⬡ ${esc(m.label)}</span>`, {
+            permanent: true, direction: "center", className: "irma-tip",
+          });
+        }
         shape.bindPopup(popup);
         shape.addTo(layer);
       }
@@ -589,7 +609,7 @@ export default function MapView() {
     // nav line endpoint may live on a marker; keep it in sync
     pushNav();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markers]);
+  }, [markers, fenceFlash]);
 
   useEffect(() => {
     pushDraft();

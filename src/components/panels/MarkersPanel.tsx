@@ -1,14 +1,16 @@
 "use client";
 
-import { MapPin, Trash2 } from "lucide-react";
+import { Hexagon, MapPin, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState, Button } from "@/components/ui";
 import { AFFILIATION_LABELS } from "@/lib/types";
 import { formatGrid } from "@/lib/geo/utils";
+import { cn } from "@/lib/util/cn";
 
 export function MarkersPanel() {
   const markers = useStore((s) => s.markers);
   const removeMarker = useStore((s) => s.removeMarker);
+  const toggleGeofence = useStore((s) => s.toggleGeofence);
   const requestFlyTo = useStore((s) => s.requestFlyTo);
   const setFollowSelf = useStore((s) => s.setFollowSelf);
   const setTool = useStore((s) => s.setTool);
@@ -61,11 +63,27 @@ export function MarkersPanel() {
                     {m.label ?? "Marcador"}
                   </div>
                   <div className="text-[11px] tabular-nums text-tac-muted">
+                    {m.geofence && <span className="text-tac-warn">⬡ GEOCERCA · </span>}
                     {AFFILIATION_LABELS[m.affiliation]} · {formatGrid(m.coords[0].lat, m.coords[0].lng)}
                   </div>
                   {m.remark && <div className="truncate text-[11px] text-tac-muted">“{m.remark}”</div>}
                 </div>
               </button>
+              {(m.type === "polygon" || m.type === "circle") && (
+                <button
+                  type="button"
+                  onClick={() => toggleGeofence(m.id)}
+                  aria-pressed={!!m.geofence}
+                  title={m.geofence ? "Quitar geocerca" : "Marcar como geocerca"}
+                  aria-label={m.geofence ? "Quitar geocerca" : "Marcar como geocerca"}
+                  className={cn(
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-tac)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tac-accent",
+                    m.geofence ? "text-tac-warn" : "text-tac-muted hover:text-tac-text",
+                  )}
+                >
+                  <Hexagon className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => removeMarker(m.id)}

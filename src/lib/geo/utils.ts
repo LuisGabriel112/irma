@@ -103,6 +103,25 @@ export function formatRelTime(ts: number, now = Date.now()): string {
   return `${Math.floor(h / 24)}d`;
 }
 
+/** True if a point lies inside a polygon (ray casting; lng=x, lat=y). */
+export function pointInPolygon(pt: LatLng, poly: LatLng[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].lng, yi = poly[i].lat;
+    const xj = poly[j].lng, yj = poly[j].lat;
+    const hit =
+      yi > pt.lat !== yj > pt.lat &&
+      pt.lng < ((xj - xi) * (pt.lat - yi)) / (yj - yi) + xi;
+    if (hit) inside = !inside;
+  }
+  return inside;
+}
+
+/** True if a point is within `radius` meters of a center. */
+export function pointInCircle(pt: LatLng, center: LatLng, radius: number): boolean {
+  return haversine(center, pt) <= radius;
+}
+
 /** Project a point `dist` meters at `brng` degrees from origin. Used by the simulator. */
 export function destination(origin: LatLng, dist: number, brng: number): LatLng {
   const d = dist / R_EARTH;
