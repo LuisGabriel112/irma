@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Battery, BatteryLow, SatelliteDish, Signal, Users } from "lucide-react";
+import { Battery, BatteryLow, Lock, SatelliteDish, Signal, Users } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { STATE_LABELS, TRANSPORT_LABELS } from "@/lib/transport/types";
 import { formatLatLng } from "@/lib/geo/utils";
@@ -14,9 +14,18 @@ const LINK_COLOR = {
   disconnected: "text-tac-muted",
 } as const;
 
-function Chip({ children, className }: { children: React.ReactNode; className?: string }) {
+function Chip({
+  children,
+  className,
+  title,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+}) {
   return (
     <div
+      title={title}
       className={cn(
         "flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] tabular-nums text-tac-text",
         className,
@@ -37,6 +46,7 @@ export function StatusBar() {
   const connState = useStore((s) => s.connection.state);
   const connKind = useStore((s) => s.connection.kind);
   const room = useStore((s) => s.self.room);
+  const encrypted = useStore((s) => !!s.self.secret?.trim());
   const peers = useStore((s) => s.peers);
 
   const [clock, setClock] = useState("--:--:--");
@@ -99,6 +109,13 @@ export function StatusBar() {
           </span>
           {STATE_LABELS[connState]}
         </Chip>
+
+        {encrypted && (
+          <Chip className="text-tac-accent" title="Tráfico cifrado de extremo a extremo">
+            <Lock className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">CIFRADO</span>
+          </Chip>
+        )}
 
         <Chip className={total > 0 && live === 0 ? "text-tac-warn" : undefined}>
           <Users className="h-3.5 w-3.5 text-tac-muted" />

@@ -8,6 +8,7 @@ export interface Identity {
   team: string;
   affiliation: Affiliation; // how teammates see this unit on the net
   room: string; // default net / room code to join
+  secret?: string; // shared passphrase for room E2E encryption (local only, never sent)
   ready: boolean; // first-run setup completed
   lat?: number; // last known / hand-pinned position, restored across reloads
   lng?: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Crosshair, LocateFixed, Radio, ShieldCheck } from "lucide-react";
+import { Crosshair, KeyRound, LocateFixed, Radio, ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
@@ -23,6 +23,7 @@ export function SetupGate() {
   const [callsign, setCallsign] = useState(self.callsign);
   const [team, setTeam] = useState(self.team);
   const [room, setRoom] = useState(self.room);
+  const [secret, setSecret] = useState(self.secret ?? "");
   const [affiliation, setAffiliation] = useState<Affiliation>(self.affiliation);
   const [fix, setFix] = useState<Fix | null>(
     self.lat != null && self.lng != null
@@ -72,6 +73,7 @@ export function SetupGate() {
       callsign,
       team,
       room,
+      secret,
       affiliation,
       position: fix ? { ...fix, manual: fixManual } : undefined,
     });
@@ -136,6 +138,27 @@ export function SetupGate() {
               />
             </label>
           </div>
+
+          {/* Room passphrase (E2E encryption) */}
+          <label className="flex flex-col gap-1.5">
+            <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-tac-muted">
+              <KeyRound className="h-3.5 w-3.5" /> Clave de cifrado
+              <span className="ml-1 normal-case tracking-normal text-tac-muted/70">opcional</span>
+            </span>
+            <input
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="Frase compartida del equipo"
+              className="rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel px-3 py-2.5 font-mono text-sm text-tac-text focus:border-tac-accent focus:outline-none"
+            />
+            <p className="text-[11px] leading-relaxed text-tac-muted">
+              {secret.trim()
+                ? "Tráfico cifrado de extremo a extremo. El relay no puede leerlo. Todo el equipo debe usar la misma sala y clave."
+                : "Sin clave, el relay ve el tráfico en claro. Comparte una frase por canal seguro para cifrar."}
+            </p>
+          </label>
 
           {/* Affiliation */}
           <div className="flex flex-col gap-1.5">

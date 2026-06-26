@@ -42,6 +42,7 @@ export interface SelfState {
   team: string;
   affiliation: Affiliation; // how teammates render this unit
   room: string; // default net / room code
+  secret?: string; // shared passphrase for room E2E encryption (local only)
   status: UnitStatus; // operational status broadcast to the team
   posManual?: boolean; // user pinned position by hand — don't let coarse GPS overwrite it
   lat?: number;
@@ -98,6 +99,7 @@ export interface StoreState {
     callsign: string;
     team: string;
     room: string;
+    secret?: string;
     affiliation: Affiliation;
     position?: { lat: number; lng: number; accuracy?: number; manual?: boolean };
   }): void;
@@ -377,6 +379,7 @@ export const useStore = create<StoreState>()((set, get) => {
         team: s.team,
         affiliation: s.affiliation,
         room: s.room,
+        secret: s.secret,
         ready: get().setupComplete,
         // Persist a hand-pinned position only; live GPS fixes are ephemeral and
         // re-acquired each session, so we don't want a stale auto-fix restored.
@@ -405,6 +408,7 @@ export const useStore = create<StoreState>()((set, get) => {
           team: id.team,
           affiliation: id.affiliation,
           room: id.room,
+          secret: id.secret,
           // Restore a hand-pinned position so the operator's real location
           // survives reloads instead of falling back to a coarse IP fix.
           ...(id.posManual && id.lat != null && id.lng != null
@@ -419,12 +423,14 @@ export const useStore = create<StoreState>()((set, get) => {
     completeSetup: (input) => {
       const callsign = input.callsign.trim().toUpperCase().slice(0, 16) || "RAVEN-1";
       const room = input.room.trim().toLowerCase().slice(0, 24) || "alfa";
+      const secret = input.secret?.trim() || undefined;
       set((s) => ({
         self: {
           ...s.self,
           callsign,
           team: input.team,
           room,
+          secret,
           affiliation: input.affiliation,
           ...(input.position
             ? {
@@ -529,6 +535,9 @@ export const useStore = create<StoreState>()((set, get) => {
         connection: { ...s.connection, kind, state: "connecting" },
       }));
       try {
+        // Arm room E2E encryption before any traffic flows. Empty passphrase =
+        // cleartext (legacy). Throws on insecure context if a passphrase is set.
+        await manager.setSecret(self.secret ?? "", self.room);
         await manager.connect(kind, { center, ...opts });
         set((s) => ({ connection: { ...s.connection, kind } }));
       } catch (e) {
@@ -600,9 +609,14 @@ export const useStore = create<StoreState>()((set, get) => {
     sendMedia: (input) => {
       const s = get().self;
       const { mime, base64 } = splitDataUrl(input.dataUrl);
-      if (base64Bytes(base64) > 950_000) {
+      // Sealing re-base64s the whole encoded line, so an encrypted attachment is
+      // ~1.8x its raw size on the wire vs ~1.3x in the clear. Tighten the cap when
+      // a room key is set so the sealed frame still fits the relay's ~1 MB limit.
+      const maxRaw = s.secret?.trim() ? 520_000 : 950_000;
+      if (base64Bytes(base64) > maxRaw) {
+        const kb = Math.round(maxRaw / 1000);
         set((st) => ({
-          log: [stamp("Adjunto demasiado grande para el relay (máx ~700 KB)"), ...st.log].slice(0, 200),
+          log: [stamp(`Adjunto demasiado grande para el relay (máx ~${kb} KB)`), ...st.log].slice(0, 200),
         }));
         return;
       }
