@@ -1,3 +1,4 @@
+import * as mgrs from "mgrs";
 import type { LatLng } from "@/lib/types";
 
 const R_EARTH = 6371008.8; // mean Earth radius, meters
@@ -52,6 +53,30 @@ export function formatLatLngDM(lat: number, lng: number): string {
     return `${String(d).padStart(pad, "0")}°${m.toFixed(1).padStart(4, "0")}'${h}`;
   };
   return `${fmt(lat, "N", "S", 2)} ${fmt(lng, "E", "W", 3)}`;
+}
+
+/**
+ * MGRS grid reference, e.g. "14Q RG 01409 22535" at 1 m precision. `digits` is
+ * the per-axis precision (5 = 1 m, 4 = 10 m, 3 = 100 m, …). Returns null in the
+ * polar regions MGRS doesn't cover, so callers can fall back to lat/lng.
+ */
+export function toMGRS(lat: number, lng: number, digits = 5): string | null {
+  if (lat > 84 || lat < -80) return null;
+  try {
+    const raw = mgrs.forward([lng, lat], digits); // "14QRG0140922535"
+    const m = /^(\d{1,2}[C-X])([A-Z]{2})(\d+)$/.exec(raw);
+    if (!m) return raw;
+    const [, gzd, sq, num] = m;
+    const half = num.length / 2;
+    return `${gzd} ${sq} ${num.slice(0, half)} ${num.slice(half)}`;
+  } catch {
+    return null;
+  }
+}
+
+/** MGRS if available, else decimal lat/lng — the canonical on-screen position. */
+export function formatGrid(lat: number, lng: number, digits = 5): string {
+  return toMGRS(lat, lng, digits) ?? formatLatLng(lat, lng);
 }
 
 export function formatDistance(m: number): string {

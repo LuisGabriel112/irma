@@ -11,7 +11,8 @@ import {
   type Affiliation,
   type LatLng,
 } from "@/lib/types";
-import { formatDistance, formatLatLng, formatRelTime, haversine } from "@/lib/geo/utils";
+import { formatDistance, formatGrid, formatRelTime, haversine } from "@/lib/geo/utils";
+import { fromUTM, toUTM, utmZone } from "@/lib/geo/utm";
 import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
 
 /**
@@ -50,6 +51,7 @@ export default function MapView() {
   const accuracyRef = useRef<L.Circle | null>(null);
   const peersLayerRef = useRef<L.LayerGroup | null>(null);
   const trailsLayerRef = useRef<L.LayerGroup | null>(null);
+  const gridLayerRef = useRef<L.LayerGroup | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const measureLayerRef = useRef<L.LayerGroup | null>(null);
   const draftLayerRef = useRef<L.LayerGroup | null>(null);
@@ -64,6 +66,7 @@ export default function MapView() {
   const peers = useStore((s) => s.peers);
   const trails = useStore((s) => s.trails);
   const trailsOn = useStore((s) => s.trailsOn);
+  const gridOn = useStore((s) => s.gridOn);
   const markers = useStore((s) => s.markers);
   const alerts = useStore((s) => s.alerts);
   const draft = useStore((s) => s.draft);
@@ -102,6 +105,7 @@ export default function MapView() {
     L.control.zoom({ position: "bottomright" }).addTo(map);
     L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
 
+    gridLayerRef.current = L.layerGroup().addTo(map);
     trailsLayerRef.current = L.layerGroup().addTo(map);
     peersLayerRef.current = L.layerGroup().addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
@@ -113,8 +117,11 @@ export default function MapView() {
     map.on("dragstart", () => useStore.getState().setFollowSelf(false));
     map.on("click", onMapClick);
     map.on("mousemove", onMapMouseMove);
+    map.on("moveend", pushGrid); // grid follows the viewport
+    map.on("zoomend", pushGrid);
 
     pushSelf();
+    pushGrid();
     pushTrails();
     pushPeers();
     pushMarkers();
@@ -138,6 +145,7 @@ export default function MapView() {
       accuracyRef.current = null;
       peersLayerRef.current = null;
       trailsLayerRef.current = null;
+      gridLayerRef.current = null;
       markersLayerRef.current = null;
       measureLayerRef.current = null;
       draftLayerRef.current = null;
@@ -248,7 +256,7 @@ export default function MapView() {
       cm.bindPopup(
         `<div class="irma-pop"><div class="irma-pop-h" style="color:${color}">${esc(p.callsign)}</div>` +
           `<div class="irma-pop-r">${AFFILIATION_LABELS[p.affiliation]}${flagged ? ` · <span style="color:${STATUS_COLORS[p.status!]}">${STATUS_LABELS[p.status!]}</span>` : ""}</div>` +
-          `<div class="irma-pop-r">${formatLatLng(p.lat, p.lng)}</div>` +
+          `<div class="irma-pop-r irma-grid">${esc(formatGrid(p.lat, p.lng))}</div>` +
           `<div class="irma-pop-r">${seen}${p.battery != null ? ` · ${p.battery}%` : ""}</div></div>`,
       );
       cm.addTo(layer);
@@ -277,6 +285,75 @@ export default function MapView() {
     }
   }
 
+  // MGRS grid overlay. We step in UTM easting/northing (a true metric grid) and
+  // invert each node back to lat/lng so lines curve correctly under the web-
+  // mercator tiles. The whole viewport is forced into the centre's UTM zone — a
+  // tiny shear at a zone seam, but correct for any local AO. Spacing shrinks with
+  // zoom (100 km / 10 km / 1 km); labels show the MGRS principal digits.
+  const GRID_COLOR = "#5eead4"; // teal — distinct from affiliation/marker colors
+  function pushGrid() {
+    const layer = gridLayerRef.current;
+    const map = mapRef.current;
+    if (!layer || !map) return;
+    layer.clearLayers();
+    if (!useStore.getState().gridOn) return;
+
+    const z = map.getZoom();
+    if (z < 6) return; // too coarse for a metric grid — would span multiple zones
+    const spacing = z >= 14 ? 1000 : z >= 11 ? 10000 : 100000;
+
+    const b = map.getBounds().pad(0.1);
+    const zone = utmZone(map.getCenter().lng);
+    const north = map.getCenter().lat >= 0;
+    const corners = [b.getNorthWest(), b.getNorthEast(), b.getSouthWest(), b.getSouthEast()].map(
+      (c) => toUTM(c.lat, c.lng, zone),
+    );
+    const minE = Math.min(...corners.map((c) => c.e));
+    const maxE = Math.max(...corners.map((c) => c.e));
+    const minN = Math.min(...corners.map((c) => c.n));
+    const maxN = Math.max(...corners.map((c) => c.n));
+    // Guard against an absurd line count (e.g. a wrong zone at low zoom).
+    if ((maxE - minE) / spacing > 80 || (maxN - minN) / spacing > 80) return;
+
+    const STEPS = 8; // polyline samples per line, so it curves smoothly
+    const lineStyle: L.PolylineOptions = {
+      color: GRID_COLOR,
+      weight: 0.5,
+      opacity: 0.4,
+      interactive: false,
+    };
+    // The MGRS principal digits for a grid value within its 100 km square.
+    const label = (v: number) =>
+      String(Math.floor((((v % 100000) + 100000) % 100000) / spacing)).padStart(
+        spacing === 1000 ? 2 : 1,
+        "0",
+      );
+    const tick = (text: string, at: L.LatLngExpression) =>
+      L.marker(at, {
+        interactive: false,
+        icon: L.divIcon({ className: "irma-grid-label", html: esc(text), iconSize: [0, 0] }),
+      }).addTo(layer);
+
+    for (let e = Math.ceil(minE / spacing) * spacing; e <= maxE; e += spacing) {
+      const pts: [number, number][] = [];
+      for (let i = 0; i <= STEPS; i++) {
+        const p = fromUTM({ zone, north, e, n: minN + ((maxN - minN) * i) / STEPS });
+        pts.push([p.lat, p.lng]);
+      }
+      L.polyline(pts, lineStyle).addTo(layer);
+      if (spacing < 100000) tick(label(e), pts[pts.length - 1]); // top edge
+    }
+    for (let n = Math.ceil(minN / spacing) * spacing; n <= maxN; n += spacing) {
+      const pts: [number, number][] = [];
+      for (let i = 0; i <= STEPS; i++) {
+        const p = fromUTM({ zone, north, e: minE + ((maxE - minE) * i) / STEPS, n });
+        pts.push([p.lat, p.lng]);
+      }
+      L.polyline(pts, lineStyle).addTo(layer);
+      if (spacing < 100000) tick(label(n), pts[0]); // left edge
+    }
+  }
+
   function pushMarkers() {
     const layer = markersLayerRef.current;
     if (!layer || !mapRef.current) return; // bail if the map was torn down (logout/unmount)
@@ -287,7 +364,7 @@ export default function MapView() {
         `<div class="irma-pop"><div class="irma-pop-h" style="color:${color}">${esc(m.label ?? "Marcador")}</div>` +
         `<div class="irma-pop-r">${AFFILIATION_LABELS[m.affiliation]} · por ${esc(m.createdBy)}</div>` +
         (m.remark ? `<div class="irma-pop-r">${esc(m.remark)}</div>` : "") +
-        `<div class="irma-pop-r">${formatLatLng(m.coords[0].lat, m.coords[0].lng)}</div></div>`;
+        `<div class="irma-pop-r irma-grid">${esc(formatGrid(m.coords[0].lat, m.coords[0].lng))}</div></div>`;
       if (m.type === "point") {
         const cm = L.circleMarker([m.coords[0].lat, m.coords[0].lng], {
           radius: 7,
@@ -501,6 +578,11 @@ export default function MapView() {
     pushTrails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trails, trailsOn]);
+
+  useEffect(() => {
+    pushGrid();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gridOn]);
 
   useEffect(() => {
     pushMarkers();

@@ -4,7 +4,7 @@ import { MapPin, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState, Button } from "@/components/ui";
 import { AFFILIATION_LABELS } from "@/lib/types";
-import { formatLatLng } from "@/lib/geo/utils";
+import { formatGrid } from "@/lib/geo/utils";
 
 export function MarkersPanel() {
   const markers = useStore((s) => s.markers);
@@ -61,7 +61,7 @@ export function MarkersPanel() {
                     {m.label ?? "Marcador"}
                   </div>
                   <div className="text-[11px] tabular-nums text-tac-muted">
-                    {AFFILIATION_LABELS[m.affiliation]} · {formatLatLng(m.coords[0].lat, m.coords[0].lng, 4)}
+                    {AFFILIATION_LABELS[m.affiliation]} · {formatGrid(m.coords[0].lat, m.coords[0].lng)}
                   </div>
                   {m.remark && <div className="truncate text-[11px] text-tac-muted">“{m.remark}”</div>}
                 </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Navigation, Radio, Route, Video, VideoOff } from "lucide-react";
+import { Grid3x3, Navigation, Radio, Route, Video, VideoOff } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
@@ -128,6 +128,8 @@ export function UnitsPanel() {
   const setStatus = useStore((s) => s.setStatus);
   const trailsOn = useStore((s) => s.trailsOn);
   const toggleTrails = useStore((s) => s.toggleTrails);
+  const gridOn = useStore((s) => s.gridOn);
+  const toggleGrid = useStore((s) => s.toggleGrid);
 
   const hasFix = self.lat != null && self.lng != null;
   const here = useMemo(
@@ -182,11 +184,25 @@ export function UnitsPanel() {
         </select>
         <button
           type="button"
+          onClick={toggleGrid}
+          aria-pressed={gridOn}
+          title="Mostrar cuadrícula MGRS"
+          className={cn(
+            "ml-auto flex items-center gap-1.5 rounded-[var(--radius-tac)] border px-2 py-1 text-xs transition-colors",
+            gridOn
+              ? "border-tac-accent text-tac-accent"
+              : "border-tac-line text-tac-muted hover:text-tac-text",
+          )}
+        >
+          <Grid3x3 className="h-3.5 w-3.5" /> MGRS
+        </button>
+        <button
+          type="button"
           onClick={toggleTrails}
           aria-pressed={trailsOn}
           title="Mostrar rastros de movimiento"
           className={cn(
-            "ml-auto flex items-center gap-1.5 rounded-[var(--radius-tac)] border px-2 py-1 text-xs transition-colors",
+            "flex items-center gap-1.5 rounded-[var(--radius-tac)] border px-2 py-1 text-xs transition-colors",
             trailsOn
               ? "border-tac-accent text-tac-accent"
               : "border-tac-line text-tac-muted hover:text-tac-text",

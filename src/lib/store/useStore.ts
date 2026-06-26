@@ -88,6 +88,7 @@ export interface StoreState {
   // breadcrumb trails (own + peers), ephemeral
   trails: Record<string, LatLng[]>; // id -> recent positions (oldest first)
   trailsOn: boolean; // render trails on the map
+  gridOn: boolean; // render the MGRS grid overlay
 
   // identity
   hydrateIdentity(): void;
@@ -165,6 +166,7 @@ export interface StoreState {
   // unit status + trails
   setStatus(status: UnitStatus): void;
   toggleTrails(): void;
+  toggleGrid(): void;
 
   // alerts (distress beacons)
   raiseAlert(type: AlertType): void;
@@ -370,6 +372,7 @@ export const useStore = create<StoreState>()((set, get) => {
     talking: false,
     trails: {},
     trailsOn: false,
+    gridOn: false,
 
     persistIdentity: () => {
       const s = get().self;
@@ -775,6 +778,8 @@ export const useStore = create<StoreState>()((set, get) => {
     },
 
     toggleTrails: () => set((s) => ({ trailsOn: !s.trailsOn })),
+
+    toggleGrid: () => set((s) => ({ gridOn: !s.gridOn })),
 
     raiseAlert: (type) => {
       const s = get().self;

@@ -209,6 +209,22 @@ body {
   font-weight: 700;
   color: var(--color-tac-warn);
 }
+/* MGRS grid reference inside a popup row */
+.irma-pop-r.irma-grid {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--color-tac-text);
+}
+/* MGRS grid-line tick labels (principal digits) drawn on the map */
+.irma-grid-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #5eead4;
+  text-shadow: 0 0 3px #0a0e0d, 0 0 3px #0a0e0d;
+  white-space: nowrap;
+  pointer-events: none;
+}
 
 /* --- Leaflet dark overrides --- */
 .leaflet-container {

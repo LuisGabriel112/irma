@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Battery, BatteryLow, Lock, SatelliteDish, Signal, Users } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { STATE_LABELS, TRANSPORT_LABELS } from "@/lib/transport/types";
-import { formatLatLng } from "@/lib/geo/utils";
+import { formatGrid } from "@/lib/geo/utils";
 import { cn } from "@/lib/util/cn";
 
 const LINK_COLOR = {
@@ -92,8 +92,8 @@ export function StatusBar() {
           <SatelliteDish className="h-3.5 w-3.5 shrink-0" />
           {hasFix ? (
             <span>
-              {/* Full coords on tablet+; just accuracy on a phone to save width. */}
-              <span className="hidden sm:inline">{formatLatLng(lat!, lng!, 4)} </span>
+              {/* MGRS grid on tablet+; just accuracy on a phone to save width. */}
+              <span className="hidden sm:inline">{formatGrid(lat!, lng!)} </span>
               {accuracy != null && <span className="text-tac-muted">±{Math.round(accuracy)}m</span>}
             </span>
           ) : (
