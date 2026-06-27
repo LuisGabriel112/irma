@@ -234,6 +234,19 @@ body {
   display: none;
 }
 
+/* MIL-STD-2525 symbol icons (divIcon wrapping a milsymbol SVG). */
+.irma-mil {
+  background: transparent;
+  border: none;
+}
+.irma-mil svg {
+  display: block;
+  filter: drop-shadow(0 0 2px #0a0e0d);
+}
+.irma-mil-stale {
+  opacity: 0.4;
+}
+
 /* --- Leaflet dark overrides --- */
 .leaflet-container {
   background: var(--color-tac-bg);

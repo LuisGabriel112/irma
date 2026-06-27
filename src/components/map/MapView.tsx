@@ -13,6 +13,7 @@ import {
 } from "@/lib/types";
 import { formatDistance, formatGrid, formatRelTime, haversine } from "@/lib/geo/utils";
 import { fromUTM, toUTM, utmZone } from "@/lib/geo/utm";
+import { applyAffiliation, defaultSidc, renderSymbol } from "@/lib/symbols";
 import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
 
 /**
@@ -239,18 +240,21 @@ export default function MapView() {
           opacity: stale ? 0.4 : 0.95,
         }).addTo(layer);
       }
-      const cm = L.circleMarker([p.lat, p.lng], {
-        radius: 6,
-        color: "#0a0e0d",
-        weight: 1.5,
-        fillColor: color,
-        fillOpacity: stale ? 0.35 : 1,
+      // MIL-STD-2525 symbol, framed by the unit's affiliation.
+      const sym = renderSymbol(defaultSidc(p.affiliation), 30);
+      const cm = L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: `irma-mil${stale ? " irma-mil-stale" : ""}`,
+          html: sym.svg,
+          iconSize: [sym.width, sym.height],
+          iconAnchor: [sym.anchorX, sym.anchorY],
+        }),
       });
       const tipStatus = flagged ? ` <span style="color:${STATUS_COLORS[p.status!]}">▲${STATUS_LABELS[p.status!]}</span>` : "";
       cm.bindTooltip(`<span style="color:${color}">${esc(p.callsign)}</span>${tipStatus}`, {
         permanent: true,
         direction: "top",
-        offset: [0, -6],
+        offset: [0, -sym.anchorY],
         className: "irma-tip",
         opacity: stale ? 0.4 : 1,
       });
@@ -389,18 +393,37 @@ export default function MapView() {
         (m.remark ? `<div class="irma-pop-r">${esc(m.remark)}</div>` : "") +
         `<div class="irma-pop-r irma-grid">${esc(formatGrid(m.coords[0].lat, m.coords[0].lng))}</div></div>`;
       if (m.type === "point") {
-        const cm = L.circleMarker([m.coords[0].lat, m.coords[0].lng], {
-          radius: 7,
-          color,
-          weight: 2,
-          fillColor: color,
-          fillOpacity: 0.25,
-        });
+        // Render a MIL-STD-2525 symbol when one was chosen, or when the marker
+        // is a tactical side (friend/hostile/neutral). Plain waypoints (unknown,
+        // e.g. route points) stay a simple coloured dot.
+        const useMil = !!m.symbol || m.affiliation === "friend" || m.affiliation === "hostile" || m.affiliation === "neutral";
+        let cm: L.Marker | L.CircleMarker;
+        let tipOffset: [number, number] = [0, -6];
+        if (useMil) {
+          const sym = renderSymbol(applyAffiliation(m.symbol ?? defaultSidc(m.affiliation), m.affiliation), 30);
+          cm = L.marker([m.coords[0].lat, m.coords[0].lng], {
+            icon: L.divIcon({
+              className: "irma-mil",
+              html: sym.svg,
+              iconSize: [sym.width, sym.height],
+              iconAnchor: [sym.anchorX, sym.anchorY],
+            }),
+          });
+          tipOffset = [0, -sym.anchorY];
+        } else {
+          cm = L.circleMarker([m.coords[0].lat, m.coords[0].lng], {
+            radius: 7,
+            color,
+            weight: 2,
+            fillColor: color,
+            fillOpacity: 0.25,
+          });
+        }
         if (m.label) {
           cm.bindTooltip(`<span style="color:${color}">${esc(m.label)}</span>`, {
             permanent: true,
             direction: "top",
-            offset: [0, -6],
+            offset: tipOffset,
             className: "irma-tip",
           });
         }

@@ -175,6 +175,7 @@ export interface StoreState {
   toggleTrails(): void;
   toggleGrid(): void;
   toggleGeofence(id: string): void; // mark/unmark a polygon/circle marker as a fence
+  setMarkerSymbol(id: string, sidc: string | undefined): void; // set/clear a point's 2525 symbol
   clearFenceEvent(id: string): void; // dismiss a geofence breach banner
 
   // alerts (distress beacons)
@@ -905,6 +906,30 @@ export const useStore = create<StoreState>()((set, get) => {
 
     clearFenceEvent: (id) =>
       set((s) => ({ fenceEvents: s.fenceEvents.filter((e) => e.id !== id) })),
+
+    setMarkerSymbol: (id, sidc) => {
+      const m = get().markers[id];
+      if (!m) return;
+      const next: Marker = { ...m, symbol: sidc };
+      set((s) => ({ markers: { ...s.markers, [id]: next } }));
+      void manager.send(
+        encode({
+          kind: "marker",
+          id: next.id,
+          markerType: next.type,
+          affiliation: next.affiliation,
+          label: next.label,
+          coords: next.coords,
+          radius: next.radius,
+          color: next.color,
+          symbol: next.symbol,
+          remark: next.remark,
+          geofence: next.geofence,
+          by: next.createdBy,
+          ts: now(),
+        }),
+      );
+    },
 
     raiseAlert: (type) => {
       const s = get().self;
