@@ -9,6 +9,7 @@ export interface Identity {
   affiliation: Affiliation; // how teammates see this unit on the net
   room: string; // default net / room code to join
   secret?: string; // shared passphrase for room E2E encryption (local only, never sent)
+  symbol?: string; // MIL-STD-2525 function key broadcast to teammates (e.g. "inf")
   ready: boolean; // first-run setup completed
   lat?: number; // last known / hand-pinned position, restored across reloads
   lng?: number;

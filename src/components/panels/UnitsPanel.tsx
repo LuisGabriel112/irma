@@ -5,6 +5,7 @@ import { Cross, Grid3x3, History, Navigation, QrCode, Radio, Route, Video, Video
 import { useStore } from "@/lib/store/useStore";
 import { CasevacForm } from "@/components/CasevacForm";
 import { QrShare } from "@/components/QrShare";
+import { SYMBOL_PALETTE } from "@/lib/symbols";
 import { Dot, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
 import {
@@ -128,6 +129,8 @@ export function UnitsPanel() {
   const wsLink = useStore((s) => s.connection.kind === "websocket" && s.connection.state === "connected");
   const status = useStore((s) => s.self.status);
   const setStatus = useStore((s) => s.setStatus);
+  const symbol = useStore((s) => s.self.symbol);
+  const setSelfSymbol = useStore((s) => s.setSelfSymbol);
   const trailsOn = useStore((s) => s.trailsOn);
   const toggleTrails = useStore((s) => s.toggleTrails);
   const gridOn = useStore((s) => s.gridOn);
@@ -216,6 +219,22 @@ export function UnitsPanel() {
         >
           <Route className="h-3.5 w-3.5" /> Rastros
         </button>
+      </div>
+
+      <div className="flex items-center gap-2 border-b border-tac-line px-3 py-2">
+        <span className="text-[10px] uppercase tracking-wide text-tac-muted">Función</span>
+        <select
+          value={symbol ?? ""}
+          onChange={(e) => setSelfSymbol(e.target.value || undefined)}
+          title="Tu símbolo MIL-STD-2525 (lo ven tus compañeros)"
+          className="ml-auto rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg px-2 py-1 text-xs text-tac-text focus:border-tac-accent focus:outline-none"
+        >
+          {SYMBOL_PALETTE.map((s) => (
+            <option key={s.key} value={s.key === "unit" ? "" : s.key}>
+              {s.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <button

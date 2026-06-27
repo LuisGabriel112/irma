@@ -28,6 +28,7 @@ export interface PositionPacket {
   accuracy?: number;
   battery?: number;
   status?: UnitStatus;
+  symbol?: string; // MIL-STD-2525 function key
   ts: number;
 }
 
@@ -191,6 +192,7 @@ function toWire(p: Packet): Wire {
       if (p.accuracy != null) w.ac = Math.round(p.accuracy);
       if (p.battery != null) w.b = Math.round(p.battery);
       if (p.status != null && p.status !== "ok") w.st = ST[p.status];
+      if (p.symbol) w.sy = p.symbol;
       return w;
     }
     case "message": {
@@ -269,6 +271,7 @@ function fromWire(w: Wire): Packet | null {
           accuracy: w.ac != null ? Number(w.ac) : undefined,
           battery: w.b != null ? Number(w.b) : undefined,
           status: w.st != null ? ST_REV[w.st as number] : undefined,
+          symbol: w.sy != null ? String(w.sy) : undefined,
         };
       case "message":
         return {

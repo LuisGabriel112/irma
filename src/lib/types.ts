@@ -36,6 +36,7 @@ export interface Peer {
   accuracy?: number; // meters (GPS CE)
   battery?: number; // 0-100
   status?: UnitStatus; // self-reported operational status
+  symbol?: string; // MIL-STD-2525 function key (e.g. "inf") this unit broadcasts
   team?: string;
   lastSeen: number; // epoch ms
 }

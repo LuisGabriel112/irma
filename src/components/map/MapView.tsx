@@ -14,7 +14,7 @@ import {
 } from "@/lib/types";
 import { compass, formatDistance, formatGrid, formatRelTime, formatSpeed, haversine, toMGRS } from "@/lib/geo/utils";
 import { fromUTM, toUTM, utmZone } from "@/lib/geo/utm";
-import { applyAffiliation, defaultSidc, renderSymbol } from "@/lib/symbols";
+import { applyAffiliation, defaultSidc, renderSymbol, sidcForKey } from "@/lib/symbols";
 import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
 
 /**
@@ -235,8 +235,8 @@ export default function MapView() {
           opacity: stale ? 0.4 : 0.95,
         }).addTo(layer);
       }
-      // MIL-STD-2525 symbol, framed by the unit's affiliation.
-      const sym = renderSymbol(defaultSidc(p.affiliation), 30);
+      // MIL-STD-2525 symbol: the unit's broadcast function, framed by affiliation.
+      const sym = renderSymbol(sidcForKey(p.symbol, p.affiliation), 30);
       const cm = L.marker([p.lat, p.lng], {
         icon: L.divIcon({
           className: `irma-mil${stale ? " irma-mil-stale" : ""}`,

@@ -47,6 +47,16 @@ export function defaultSidc(aff: Affiliation): string {
   return applyAffiliation("SFGPU----------", aff);
 }
 
+const BY_KEY: Record<string, string> = Object.fromEntries(
+  SYMBOL_PALETTE.map((s) => [s.key, s.sidc]),
+);
+
+/** SIDC for a palette key (e.g. "inf") framed by affiliation; default unit if unknown. */
+export function sidcForKey(key: string | undefined, aff: Affiliation): string {
+  const base = (key && BY_KEY[key]) || "SFGPU----------";
+  return applyAffiliation(base, aff);
+}
+
 /** Force the standard-identity (affiliation) character of a SIDC. */
 export function applyAffiliation(sidc: string, aff: Affiliation): string {
   const padded = (sidc + "---------------").slice(0, 15);

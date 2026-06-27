@@ -46,6 +46,7 @@ export interface SelfState {
   affiliation: Affiliation; // how teammates render this unit
   room: string; // default net / room code
   secret?: string; // shared passphrase for room E2E encryption (local only)
+  symbol?: string; // MIL-STD-2525 function key broadcast to teammates
   status: UnitStatus; // operational status broadcast to the team
   posManual?: boolean; // user pinned position by hand — don't let coarse GPS overwrite it
   lat?: number;
@@ -180,6 +181,7 @@ export interface StoreState {
 
   // unit status + trails
   setStatus(status: UnitStatus): void;
+  setSelfSymbol(key: string | undefined): void; // own MIL-STD-2525 function symbol
   toggleTrails(): void;
   toggleGrid(): void;
 
@@ -313,6 +315,7 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
         accuracy: p.accuracy,
         battery: p.battery,
         status: p.status,
+        symbol: p.symbol,
         lastSeen: p.ts || now(),
       };
       set((s) => ({
@@ -496,6 +499,7 @@ export const useStore = create<StoreState>()((set, get) => {
         affiliation: s.affiliation,
         room: s.room,
         secret: s.secret,
+        symbol: s.symbol,
         ready: get().setupComplete,
         // Persist a hand-pinned position only; live GPS fixes are ephemeral and
         // re-acquired each session, so we don't want a stale auto-fix restored.
@@ -525,6 +529,7 @@ export const useStore = create<StoreState>()((set, get) => {
           affiliation: id.affiliation,
           room: id.room,
           secret: id.secret,
+          symbol: id.symbol,
           // Restore a hand-pinned position so the operator's real location
           // survives reloads instead of falling back to a coarse IP fix.
           ...(id.posManual && id.lat != null && id.lng != null
@@ -731,6 +736,7 @@ export const useStore = create<StoreState>()((set, get) => {
         accuracy: s.accuracy,
         battery: s.battery,
         status: s.status,
+        symbol: s.symbol,
         ts: now(),
       };
       void manager.send(encode(packet));
@@ -925,6 +931,12 @@ export const useStore = create<StoreState>()((set, get) => {
 
     setStatus: (status) => {
       set((s) => ({ self: { ...s.self, status } }));
+      if (get().connection.state === "connected") get().broadcastPosition();
+    },
+
+    setSelfSymbol: (key) => {
+      set((s) => ({ self: { ...s.self, symbol: key } }));
+      get().persistIdentity();
       if (get().connection.state === "connected") get().broadcastPosition();
     },
 
