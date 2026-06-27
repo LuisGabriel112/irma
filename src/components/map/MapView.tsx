@@ -317,18 +317,6 @@ export default function MapView() {
     // Guard against an absurd line count (e.g. a wrong zone at low zoom).
     if ((maxE - minE) / spacing > 80 || (maxN - minN) / spacing > 80) return;
 
-    // Labels ride the *visible* edge (lines extend into the padded margin, so
-    // anchoring a label at a line's padded end would push it off-screen). Inset
-    // slightly so the text sits inside the viewport instead of on the very edge.
-    const vc = (() => {
-      const vb = map.getBounds();
-      return [vb.getNorthWest(), vb.getNorthEast(), vb.getSouthWest(), vb.getSouthEast()].map((c) =>
-        toUTM(c.lat, c.lng, zone),
-      );
-    })();
-    const labelN = Math.max(...vc.map((c) => c.n)) - (maxN - minN) * 0.02; // near top
-    const labelE = Math.min(...vc.map((c) => c.e)) + (maxE - minE) * 0.02; // near left
-
     const STEPS = 8; // polyline samples per line, so it curves smoothly
     const lineStyle: L.PolylineOptions = {
       color: GRID_COLOR,
@@ -336,18 +324,8 @@ export default function MapView() {
       opacity: 0.4,
       interactive: false,
     };
-    // The MGRS principal digits for a grid value within its 100 km square.
-    const label = (v: number) =>
-      String(Math.floor((((v % 100000) + 100000) % 100000) / spacing)).padStart(
-        spacing === 1000 ? 2 : 1,
-        "0",
-      );
-    const tick = (text: string, lat: number, lng: number) =>
-      L.marker([lat, lng], {
-        interactive: false,
-        icon: L.divIcon({ className: "irma-grid-label", html: esc(text), iconSize: [0, 0] }),
-      }).addTo(layer);
 
+    // Grid lines (vertical = constant easting, horizontal = constant northing).
     for (let e = Math.ceil(minE / spacing) * spacing; e <= maxE; e += spacing) {
       const pts: [number, number][] = [];
       for (let i = 0; i <= STEPS; i++) {
@@ -355,10 +333,6 @@ export default function MapView() {
         pts.push([p.lat, p.lng]);
       }
       L.polyline(pts, lineStyle).addTo(layer);
-      if (spacing < 100000) {
-        const lp = fromUTM({ zone, north, e, n: labelN }); // top of visible area
-        tick(label(e), lp.lat, lp.lng);
-      }
     }
     for (let n = Math.ceil(minN / spacing) * spacing; n <= maxN; n += spacing) {
       const pts: [number, number][] = [];
@@ -367,9 +341,34 @@ export default function MapView() {
         pts.push([p.lat, p.lng]);
       }
       L.polyline(pts, lineStyle).addTo(layer);
-      if (spacing < 100000) {
-        const lp = fromUTM({ zone, north, e: labelE, n }); // left of visible area
-        tick(label(n), lp.lat, lp.lng);
+    }
+
+    // Per-square MGRS reference, centred in each cell (e.g. "01 23" = easting
+    // principal digits + northing). 100 km squares carry MGRS letters elsewhere,
+    // so they get no numeric label. Rendered as permanent tooltips (the same path
+    // unit labels use — reliable, unlike a 0-size divIcon).
+    if (spacing >= 100000) return;
+    const eVals: number[] = [];
+    const nVals: number[] = [];
+    for (let e = Math.floor(minE / spacing) * spacing; e < maxE; e += spacing) eVals.push(e);
+    for (let n = Math.floor(minN / spacing) * spacing; n < maxN; n += spacing) nVals.push(n);
+    if (eVals.length * nVals.length > 220) return; // too dense to be readable
+    const pad = spacing === 1000 ? 2 : 1;
+    const digits = (v: number) =>
+      String(Math.floor((((v % 100000) + 100000) % 100000) / spacing)).padStart(pad, "0");
+    for (const e of eVals) {
+      for (const n of nVals) {
+        const c = fromUTM({ zone, north, e: e + spacing / 2, n: n + spacing / 2 });
+        L.tooltip({
+          permanent: true,
+          direction: "center",
+          className: "irma-grid-label",
+          interactive: false,
+          opacity: 1,
+        })
+          .setLatLng([c.lat, c.lng])
+          .setContent(`${digits(e)} ${digits(n)}`)
+          .addTo(layer);
       }
     }
   }
