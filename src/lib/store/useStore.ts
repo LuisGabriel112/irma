@@ -119,6 +119,7 @@ export interface StoreState {
   }): void;
   editIdentity(): void; // reopen the setup gate
   logout(): Promise<void>; // sign out: disconnect, wipe identity, back to setup gate
+  applyJoin(room: string, secret: string | undefined, relay?: string): void; // join a shared net (QR/link)
 
   // ui
   setTool(tool: Tool): void;
@@ -569,6 +570,16 @@ export const useStore = create<StoreState>()((set, get) => {
     },
 
     editIdentity: () => set({ setupComplete: false }),
+
+    // Join a net from a shared QR/link: adopt its room + passphrase and connect.
+    // Used for operators who already finished setup (the setup gate handles the
+    // first-run prefill path instead).
+    applyJoin: (room, secret, relay) => {
+      const r = room.trim().toLowerCase().slice(0, 24) || "alfa";
+      set((s) => ({ self: { ...s.self, room: r, secret: secret?.trim() || s.self.secret } }));
+      get().persistIdentity();
+      void get().connect("websocket", { room: r, ...(relay ? { url: relay } : {}) }).catch(() => {});
+    },
 
     logout: async () => {
       mesh.destroy();

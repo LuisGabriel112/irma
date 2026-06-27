@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useStore } from "@/lib/store/useStore";
+import { joinFromLocation } from "@/lib/join";
 import { StatusBar } from "@/components/StatusBar";
 import { ToolDock } from "@/components/ToolDock";
 import { SidePanel } from "@/components/SidePanel";
@@ -36,6 +37,14 @@ export function AppShell() {
   useEffect(() => {
     hydrateIdentity();
     hydrateSession();
+    // A shared join link (?join=): if this operator already finished setup, the
+    // gate won't show, so adopt the room + passphrase and connect right here.
+    // First-run operators are handled by the setup gate's own prefill.
+    const j = joinFromLocation();
+    if (j && useStore.getState().setupComplete) {
+      window.history.replaceState(null, "", window.location.pathname);
+      useStore.getState().applyJoin(j.room, j.secret, j.relay);
+    }
     setHydrated(true);
   }, [hydrateIdentity, hydrateSession]);
 
