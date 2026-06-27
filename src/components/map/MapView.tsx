@@ -6,6 +6,7 @@ import { useStore, type Tool } from "@/lib/store/useStore";
 import {
   AFFILIATION_COLORS,
   AFFILIATION_LABELS,
+  CASEVAC_SECURITY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
   type Affiliation,
@@ -58,6 +59,7 @@ export default function MapView() {
   const draftLayerRef = useRef<L.LayerGroup | null>(null);
   const navLayerRef = useRef<L.LayerGroup | null>(null);
   const alertsLayerRef = useRef<L.LayerGroup | null>(null);
+  const casevacLayerRef = useRef<L.LayerGroup | null>(null);
   const measureRef = useRef<LatLng[]>([]);
   const firstFixRef = useRef(false);
   const coarseFixWarnedRef = useRef(false);
@@ -71,6 +73,7 @@ export default function MapView() {
   const markers = useStore((s) => s.markers);
   const fenceFlash = useStore((s) => s.fenceFlash);
   const alerts = useStore((s) => s.alerts);
+  const casevacs = useStore((s) => s.casevacs);
   const draft = useStore((s) => s.draft);
   const navTargetId = useStore((s) => s.navTargetId);
   const selfLat = useStore((s) => s.self.lat);
@@ -114,6 +117,7 @@ export default function MapView() {
     measureLayerRef.current = L.layerGroup().addTo(map);
     navLayerRef.current = L.layerGroup().addTo(map);
     alertsLayerRef.current = L.layerGroup().addTo(map);
+    casevacLayerRef.current = L.layerGroup().addTo(map);
     draftLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("dragstart", () => useStore.getState().setFollowSelf(false));
@@ -130,6 +134,7 @@ export default function MapView() {
     pushDraft();
     pushNav();
     pushAlerts();
+    pushCasevacs();
 
     setTimeout(() => map.invalidateSize(), 300);
     setMapReady(true);
@@ -153,6 +158,7 @@ export default function MapView() {
       draftLayerRef.current = null;
       navLayerRef.current = null;
       alertsLayerRef.current = null;
+      casevacLayerRef.current = null;
       firstFixRef.current = false;
       coarseFixWarnedRef.current = false;
     };
@@ -588,6 +594,53 @@ export default function MapView() {
     }
   }
 
+  // CASEVAC pickup sites — medical symbol + a popup with the full 9-line request.
+  function pushCasevacs() {
+    const layer = casevacLayerRef.current;
+    if (!layer || !mapRef.current) return;
+    layer.clearLayers();
+    for (const c of Object.values(useStore.getState().casevacs)) {
+      const sym = renderSymbol("SFGPUS---------", 32); // friendly medical
+      const m = L.marker([c.lat, c.lng], {
+        icon: L.divIcon({
+          className: "irma-mil irma-casevac",
+          html: sym.svg,
+          iconSize: [sym.width, sym.height],
+          iconAnchor: [sym.anchorX, sym.anchorY],
+        }),
+        zIndexOffset: 800,
+      });
+      m.bindTooltip(`<span style="color:#ff6b6b">✚ CASEVAC · ${esc(c.from)}</span>`, {
+        permanent: true, direction: "top", offset: [0, -sym.anchorY], className: "irma-tip", opacity: 1,
+      });
+      const pat = [
+        c.urgent ? `${c.urgent} urgente` : "",
+        c.priority ? `${c.priority} prioritario` : "",
+        c.routine ? `${c.routine} rutina` : "",
+      ].filter(Boolean).join(", ") || "—";
+      const type = [
+        c.litter ? `${c.litter} camilla` : "",
+        c.ambulatory ? `${c.ambulatory} ambulatorio` : "",
+      ].filter(Boolean).join(", ") || "—";
+      const row = (n: number, label: string, val?: string) =>
+        val ? `<div class="irma-pop-r"><b>L${n}</b> ${label}: ${esc(val)}</div>` : "";
+      m.bindPopup(
+        `<div class="irma-pop"><div class="irma-pop-h" style="color:#ff6b6b">✚ CASEVAC · ${esc(c.from)}</div>` +
+          `<div class="irma-pop-r irma-grid">L1 ${esc(formatGrid(c.lat, c.lng))}</div>` +
+          row(2, "Frec/Ind", c.freq) +
+          `<div class="irma-pop-r"><b>L3</b> Pacientes: ${esc(pat)}</div>` +
+          row(4, "Equipo", c.equipment) +
+          `<div class="irma-pop-r"><b>L5</b> Tipo: ${esc(type)}</div>` +
+          (c.security ? `<div class="irma-pop-r"><b>L6</b> Seguridad: ${esc(CASEVAC_SECURITY_LABELS[c.security])}</div>` : "") +
+          row(7, "Marcaje", c.marking) +
+          row(8, "Nacionalidad", c.nationality) +
+          row(9, "Terreno/NBQ", c.notes) +
+          `</div>`,
+      );
+      m.addTo(layer);
+    }
+  }
+
   function handleMeasure(at: LatLng) {
     const layer = measureLayerRef.current;
     const map = mapRef.current;
@@ -662,6 +715,11 @@ export default function MapView() {
   }, [alerts]);
 
   useEffect(() => {
+    pushCasevacs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [casevacs]);
+
+  useEffect(() => {
     pushNav();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navTargetId, selfLat, selfLng, peers]);
@@ -690,6 +748,8 @@ export default function MapView() {
       target = [st.peers[id].lat, st.peers[id].lng];
     } else if (st.markers[id]) {
       target = [st.markers[id].coords[0].lat, st.markers[id].coords[0].lng];
+    } else if (st.casevacs[id]) {
+      target = [st.casevacs[id].lat, st.casevacs[id].lng];
     }
     if (target) map.flyTo(target, Math.max(map.getZoom(), 15));
     // eslint-disable-next-line react-hooks/exhaustive-deps

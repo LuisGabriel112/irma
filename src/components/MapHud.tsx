@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ArrowRightFromLine, ArrowRightToLine, Check, Navigation, Siren, Undo2, X } from "lucide-react";
+import { ArrowRightFromLine, ArrowRightToLine, Check, Cross, Navigation, Siren, Undo2, X } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Button } from "@/components/ui";
 import { ALERT_LABELS, type FenceEvent, type LatLng } from "@/lib/types";
@@ -157,6 +157,76 @@ export function AlertBanner() {
               type="button"
               onClick={() => clearAlert(a.id)}
               aria-label="Descartar alerta"
+              className="text-tac-muted hover:text-tac-text"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** CASEVAC banners — slide in when a 9-line MEDEVAC request arrives. */
+export function CasevacBanner() {
+  const casevacs = useStore((s) => s.casevacs);
+  const clearCasevac = useStore((s) => s.clearCasevac);
+  const setNavTarget = useStore((s) => s.setNavTarget);
+  const requestFlyTo = useStore((s) => s.requestFlyTo);
+  const selfLat = useStore((s) => s.self.lat);
+  const selfLng = useStore((s) => s.self.lng);
+
+  const list = Object.values(casevacs).sort((a, b) => b.ts - a.ts);
+  const prevCount = useRef(0);
+  useEffect(() => {
+    if (list.length > prevCount.current) beep(990, 1320); // distinct medical tone
+    prevCount.current = list.length;
+  }, [list.length]);
+
+  if (list.length === 0) return null;
+
+  return (
+    <div className="pointer-events-auto absolute left-1/2 top-[calc(var(--statusbar-h)+0.5rem)] z-40 flex w-[min(92vw,28rem)] -translate-x-1/2 flex-col gap-1.5">
+      {list.map((c) => {
+        const dist =
+          selfLat != null && selfLng != null
+            ? haversine({ lat: selfLat, lng: selfLng }, { lat: c.lat, lng: c.lng })
+            : null;
+        const pat = [
+          c.urgent ? `${c.urgent} URG` : "",
+          c.priority ? `${c.priority} PRI` : "",
+          c.routine ? `${c.routine} RUT` : "",
+        ].filter(Boolean).join(" · ") || "—";
+        return (
+          <div
+            key={c.id}
+            className="flex items-center gap-2.5 rounded-[var(--radius-tac)] border border-tac-danger/60 bg-tac-danger/15 px-3 py-2 backdrop-blur-md"
+          >
+            <Cross className="h-5 w-5 shrink-0 animate-pulse text-tac-danger" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="font-mono text-sm font-semibold text-tac-danger">
+                CASEVAC · {c.from}
+              </div>
+              <div className="font-mono text-[11px] tabular-nums text-tac-muted">
+                {pat}
+                {dist != null ? ` · a ${formatDistance(dist)}` : ""}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setNavTarget(null);
+                requestFlyTo(c.id);
+              }}
+              className="text-[11px] font-semibold uppercase tracking-wide text-tac-danger hover:underline"
+            >
+              Ir
+            </button>
+            <button
+              type="button"
+              onClick={() => clearCasevac(c.id)}
+              aria-label="Cerrar CASEVAC"
               className="text-tac-muted hover:text-tac-text"
             >
               <X className="h-4 w-4" />

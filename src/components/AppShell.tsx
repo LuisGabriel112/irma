@@ -9,7 +9,7 @@ import { SidePanel } from "@/components/SidePanel";
 import { SetupGate } from "@/components/SetupGate";
 import { RemoteAudio } from "@/components/RemoteAudio";
 import { VoicePtt } from "@/components/VoicePtt";
-import { AlertBanner, DrawControls, GeofenceBanner, NavHud } from "@/components/MapHud";
+import { AlertBanner, CasevacBanner, DrawControls, GeofenceBanner, NavHud } from "@/components/MapHud";
 
 // MapLibre touches `window` at import — load it browser-only.
 const MapView = dynamic(() => import("@/components/map/MapView"), {
@@ -166,6 +166,7 @@ export function AppShell() {
           <NavHud />
           <AlertBanner />
           <GeofenceBanner />
+          <CasevacBanner />
           <VoicePtt />
           <RemoteAudio />
           {!setupComplete && <SetupGate />}

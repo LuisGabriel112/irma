@@ -3,6 +3,7 @@ import type {
   Affiliation,
   Alert,
   AlertType,
+  Casevac,
   ChatMessage,
   FenceEvent,
   LatLng,
@@ -67,6 +68,7 @@ export interface StoreState {
   markers: Record<string, Marker>;
   messages: ChatMessage[];
   alerts: Record<string, Alert>; // active distress beacons (own + received)
+  casevacs: Record<string, Casevac>; // active 9-line MEDEVAC requests (own + received)
   unread: number;
   connection: Connection;
   log: string[];
@@ -181,6 +183,10 @@ export interface StoreState {
   // alerts (distress beacons)
   raiseAlert(type: AlertType): void;
   clearAlert(id: string): void;
+
+  // CASEVAC (9-line MEDEVAC)
+  sendCasevac(input: Omit<Casevac, "id" | "from" | "ts">): void;
+  clearCasevac(id: string): void;
 
   // inbound
   ingestLine(line: string): void;
@@ -361,6 +367,17 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
       set((s) => ({ alerts: { ...s.alerts, [alert.id]: alert } }));
       break;
     }
+    case "casevac": {
+      const c: Casevac = {
+        id: p.id, from: p.from, lat: p.lat, lng: p.lng,
+        freq: p.freq, urgent: p.urgent, priority: p.priority, routine: p.routine,
+        equipment: p.equipment, litter: p.litter, ambulatory: p.ambulatory,
+        security: p.security, marking: p.marking, nationality: p.nationality,
+        notes: p.notes, ts: p.ts || now(),
+      };
+      set((s) => ({ casevacs: { ...s.casevacs, [c.id]: c } }));
+      break;
+    }
     case "media": {
       if (p.to && p.to !== state.self.callsign) return; // not addressed to us
       const msg: ChatMessage = {
@@ -428,6 +445,7 @@ export const useStore = create<StoreState>()((set, get) => {
     markers: {},
     messages: [],
     alerts: {},
+    casevacs: {},
     unread: 0,
     connection: { state: "disconnected" },
     log: [],
@@ -555,6 +573,7 @@ export const useStore = create<StoreState>()((set, get) => {
         markers: {},
         messages: [],
         alerts: {},
+        casevacs: {},
         unread: 0,
         log: [],
         connection: { state: "disconnected" },
@@ -639,6 +658,7 @@ export const useStore = create<StoreState>()((set, get) => {
       await manager.disconnect();
       set({
         peers: {},
+        casevacs: {},
         connection: { state: "disconnected" },
         videoBroadcasting: false,
         localStream: null,
@@ -970,6 +990,38 @@ export const useStore = create<StoreState>()((set, get) => {
         const next = { ...s.alerts };
         delete next[id];
         return { alerts: next };
+      }),
+
+    sendCasevac: (input) => {
+      const s = get().self;
+      const c: Casevac = {
+        ...input,
+        id: `${s.id}-cv-${now()}`,
+        from: s.callsign,
+        ts: now(),
+      };
+      set((st) => ({
+        casevacs: { ...st.casevacs, [c.id]: c },
+        log: [stamp(`✚ CASEVAC emitido (${c.urgent ?? 0} urgente)`), ...st.log].slice(0, 200),
+      }));
+      void manager.send(
+        encode({
+          kind: "casevac",
+          id: c.id, from: c.from, lat: c.lat, lng: c.lng,
+          freq: c.freq, urgent: c.urgent, priority: c.priority, routine: c.routine,
+          equipment: c.equipment, litter: c.litter, ambulatory: c.ambulatory,
+          security: c.security, marking: c.marking, nationality: c.nationality,
+          notes: c.notes, ts: c.ts,
+        }),
+      );
+    },
+
+    clearCasevac: (id) =>
+      set((s) => {
+        if (!s.casevacs[id]) return {};
+        const next = { ...s.casevacs };
+        delete next[id];
+        return { casevacs: next };
       }),
 
     removeMarker: (id) => {

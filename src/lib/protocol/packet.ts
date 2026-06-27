@@ -1,4 +1,4 @@
-import type { Affiliation, AlertType, LatLng, MarkerType, MediaKind, UnitStatus } from "@/lib/types";
+import type { Affiliation, AlertType, CasevacSecurity, LatLng, MarkerType, MediaKind, UnitStatus } from "@/lib/types";
 
 /**
  * IRMA wire protocol.
@@ -116,6 +116,31 @@ export interface MediaPacket {
   ts: number;
 }
 
+/**
+ * 9-line MEDEVAC/CASEVAC request. Several fields of text — larger than a LoRa
+ * frame is comfortable with, so it travels over the relay, but the codec stays
+ * compact so a short request can still squeeze onto a radio link.
+ */
+export interface CasevacPacket {
+  kind: "casevac";
+  id: string;
+  from: string;
+  lat: number;
+  lng: number;
+  freq?: string;
+  urgent?: number;
+  priority?: number;
+  routine?: number;
+  equipment?: string;
+  litter?: number;
+  ambulatory?: number;
+  security?: CasevacSecurity;
+  marking?: string;
+  nationality?: string;
+  notes?: string;
+  ts: number;
+}
+
 export type Packet =
   | PositionPacket
   | MessagePacket
@@ -124,12 +149,13 @@ export type Packet =
   | PingPacket
   | AlertPacket
   | MediaPacket
-  | SignalPacket;
+  | SignalPacket
+  | CasevacPacket;
 
 // --- compact codec -------------------------------------------------------
 
-const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5, media: 6, signal: 7 } as const;
-const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert", "media", "signal"] as const;
+const TYPE = { position: 0, message: 1, marker: 2, "marker-delete": 3, ping: 4, alert: 5, media: 6, signal: 7, casevac: 8 } as const;
+const TYPE_REV = ["position", "message", "marker", "marker-delete", "ping", "alert", "media", "signal", "casevac"] as const;
 
 const MK = { image: 0, audio: 1 } as const;
 const MK_REV = ["image", "audio"] as const;
@@ -210,6 +236,21 @@ function toWire(p: Packet): Wire {
     }
     case "signal":
       return { t: TYPE.signal, i: p.id, f: p.from, o: p.to, g: JSON.stringify(p.signal), ts: p.ts };
+    case "casevac": {
+      const w: Wire = { t: TYPE.casevac, i: p.id, f: p.from, la: r6(p.lat), ln: r6(p.lng), ts: p.ts };
+      if (p.freq) w.fq = p.freq;
+      if (p.urgent != null) w.u = p.urgent;
+      if (p.priority != null) w.p = p.priority;
+      if (p.routine != null) w.rt = p.routine;
+      if (p.equipment) w.eq = p.equipment;
+      if (p.litter != null) w.lt = p.litter;
+      if (p.ambulatory != null) w.am = p.ambulatory;
+      if (p.security) w.se = p.security;
+      if (p.marking) w.mg = p.marking;
+      if (p.nationality) w.na = p.nationality;
+      if (p.notes) w.no = p.notes;
+      return w;
+    }
   }
 }
 
@@ -276,6 +317,22 @@ function fromWire(w: Wire): Packet | null {
         return {
           kind, id: String(w.i), from: String(w.f), to: String(w.o),
           signal: JSON.parse(String(w.g)) as SignalBody, ts: Number(w.ts),
+        };
+      case "casevac":
+        return {
+          kind, id: String(w.i), from: String(w.f),
+          lat: Number(w.la), lng: Number(w.ln), ts: Number(w.ts),
+          freq: w.fq != null ? String(w.fq) : undefined,
+          urgent: w.u != null ? Number(w.u) : undefined,
+          priority: w.p != null ? Number(w.p) : undefined,
+          routine: w.rt != null ? Number(w.rt) : undefined,
+          equipment: w.eq != null ? String(w.eq) : undefined,
+          litter: w.lt != null ? Number(w.lt) : undefined,
+          ambulatory: w.am != null ? Number(w.am) : undefined,
+          security: w.se != null ? (String(w.se) as CasevacSecurity) : undefined,
+          marking: w.mg != null ? String(w.mg) : undefined,
+          nationality: w.na != null ? String(w.na) : undefined,
+          notes: w.no != null ? String(w.no) : undefined,
         };
     }
   } catch {

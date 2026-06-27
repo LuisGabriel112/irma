@@ -89,6 +89,36 @@ export interface FenceEvent {
   ts: number;
 }
 
+/** Security at the pickup site (9-line MEDEVAC, line 6). */
+export type CasevacSecurity = "N" | "P" | "E" | "X"; // none / possible / enemy / armed escort req
+
+export const CASEVAC_SECURITY_LABELS: Record<CasevacSecurity, string> = {
+  N: "Sin enemigo",
+  P: "Posible enemigo",
+  E: "Enemigo (precaución)",
+  X: "Escolta armada requerida",
+};
+
+/** A 9-line MEDEVAC/CASEVAC request, broadcast to the net. */
+export interface Casevac {
+  id: string;
+  from: string; // requesting callsign
+  lat: number; // line 1 — pickup location
+  lng: number;
+  freq?: string; // line 2 — frequency / callsign
+  urgent?: number; // line 3 — patients by precedence
+  priority?: number;
+  routine?: number;
+  equipment?: string; // line 4 — hoist / extraction / ventilator / none
+  litter?: number; // line 5 — patients by type
+  ambulatory?: number;
+  security?: CasevacSecurity; // line 6
+  marking?: string; // line 7 — how the site is marked
+  nationality?: string; // line 8 — patient nationality / status
+  notes?: string; // line 9 — terrain / NBC
+  ts: number;
+}
+
 export type MediaKind = "image" | "audio";
 
 /** An attachment on a chat message. Relay-only (too large for LoRa frames). */
