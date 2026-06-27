@@ -170,6 +170,9 @@ export function LinkPanel() {
                 onChange={(e) => setRoom(e.target.value.trim().toLowerCase())}
                 maxLength={24}
                 placeholder="alfa"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 className="rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg px-2 py-1.5 font-mono text-sm lowercase text-tac-text focus:border-tac-accent focus:outline-none"
               />
             </label>

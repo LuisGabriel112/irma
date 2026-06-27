@@ -154,6 +154,9 @@ export function SetupGate() {
                 onChange={(e) => setRoom(e.target.value.toLowerCase())}
                 maxLength={24}
                 placeholder="alfa"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 className="rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel px-3 py-2.5 font-mono text-sm lowercase text-tac-text focus:border-tac-accent focus:outline-none"
               />
             </label>
@@ -170,6 +173,9 @@ export function SetupGate() {
               onChange={(e) => setSecret(e.target.value)}
               type="password"
               autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="Frase compartida del equipo"
               className="rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel px-3 py-2.5 font-mono text-sm text-tac-text focus:border-tac-accent focus:outline-none"
             />
