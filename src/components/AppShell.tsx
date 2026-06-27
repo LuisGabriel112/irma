@@ -9,7 +9,7 @@ import { SidePanel } from "@/components/SidePanel";
 import { SetupGate } from "@/components/SetupGate";
 import { RemoteAudio } from "@/components/RemoteAudio";
 import { VoicePtt } from "@/components/VoicePtt";
-import { AlertBanner, CasevacBanner, DrawControls, GeofenceBanner, NavHud } from "@/components/MapHud";
+import { AlertBanner, CasevacBanner, DrawControls, GeofenceBanner, NavHud, ReplayPanel } from "@/components/MapHud";
 
 // MapLibre touches `window` at import — load it browser-only.
 const MapView = dynamic(() => import("@/components/map/MapView"), {
@@ -138,6 +138,16 @@ export function AppShell() {
     return () => clearInterval(t);
   }, []);
 
+  // Mission history recorder — snapshot all unit positions while connected, so
+  // the timeline can replay the operation afterwards.
+  useEffect(() => {
+    const t = setInterval(() => {
+      const s = useStore.getState();
+      if (s.connection.state === "connected" && !s.replay.active) s.recordFrame();
+    }, 4000);
+    return () => clearInterval(t);
+  }, []);
+
   // Drop peers we haven't heard from in a while so disconnected units don't ghost the map.
   useEffect(() => {
     const t = setInterval(() => useStore.getState().pruneStale(), 30_000);
@@ -164,6 +174,7 @@ export function AppShell() {
           <SidePanel />
           <DrawControls />
           <NavHud />
+          <ReplayPanel />
           <AlertBanner />
           <GeofenceBanner />
           <CasevacBanner />

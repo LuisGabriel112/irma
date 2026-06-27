@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Cross, Grid3x3, Navigation, QrCode, Radio, Route, Video, VideoOff } from "lucide-react";
+import { Cross, Grid3x3, History, Navigation, QrCode, Radio, Route, Video, VideoOff } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { CasevacForm } from "@/components/CasevacForm";
 import { QrShare } from "@/components/QrShare";
@@ -132,6 +132,8 @@ export function UnitsPanel() {
   const toggleTrails = useStore((s) => s.toggleTrails);
   const gridOn = useStore((s) => s.gridOn);
   const toggleGrid = useStore((s) => s.toggleGrid);
+  const startReplay = useStore((s) => s.startReplay);
+  const historyLen = useStore((s) => s.history.length);
   const [casevacOpen, setCasevacOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
@@ -235,6 +237,18 @@ export function UnitsPanel() {
         <span className="font-medium">Compartir sala (QR)</span>
       </button>
       {qrOpen && <QrShare onClose={() => setQrOpen(false)} />}
+
+      <button
+        type="button"
+        onClick={startReplay}
+        disabled={historyLen === 0}
+        className="flex items-center gap-2 border-b border-tac-line px-3 py-2 text-left text-xs text-tac-muted transition-colors hover:bg-tac-panel-2 hover:text-tac-text disabled:opacity-40 disabled:hover:bg-transparent"
+      >
+        <History className="h-4 w-4" />
+        <span className="font-medium">
+          Reproducir misión{historyLen > 0 ? ` (${historyLen} cuadros)` : " — sin datos aún"}
+        </span>
+      </button>
 
       {wsLink && (
         <button

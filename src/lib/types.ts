@@ -119,6 +119,23 @@ export interface Casevac {
   ts: number;
 }
 
+/** One unit's position within a recorded history frame. */
+export interface HistoryUnit {
+  id: string;
+  callsign: string;
+  affiliation: Affiliation;
+  lat: number;
+  lng: number;
+  heading?: number;
+  status?: UnitStatus;
+}
+
+/** A timestamped snapshot of every known unit — the mission replay timeline. */
+export interface HistoryFrame {
+  ts: number;
+  units: HistoryUnit[];
+}
+
 export type MediaKind = "image" | "audio";
 
 /** An attachment on a chat message. Relay-only (too large for LoRa frames). */

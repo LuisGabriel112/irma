@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ArrowRightFromLine, ArrowRightToLine, Check, Cross, Navigation, Siren, Undo2, X } from "lucide-react";
+import { ArrowRightFromLine, ArrowRightToLine, Check, Cross, Gauge, Navigation, Pause, Play, Siren, Undo2, X } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Button } from "@/components/ui";
 import { ALERT_LABELS, type FenceEvent, type LatLng } from "@/lib/types";
@@ -234,6 +234,73 @@ export function CasevacBanner() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Mission replay scrubber. Plays back recorded position history with a timeline
+ * slider and variable speed; advancing frames re-renders the map's replay layer.
+ */
+export function ReplayPanel() {
+  const replay = useStore((s) => s.replay);
+  const frames = useStore((s) => s.history.length);
+  const ts = useStore((s) => s.history[s.replay.index]?.ts);
+  const setReplayIndex = useStore((s) => s.setReplayIndex);
+  const toggleReplayPlay = useStore((s) => s.toggleReplayPlay);
+  const cycleReplaySpeed = useStore((s) => s.cycleReplaySpeed);
+  const exitReplay = useStore((s) => s.exitReplay);
+
+  // Auto-advance while playing. Frames are 4 s apart; speed compresses that.
+  useEffect(() => {
+    if (!replay.active || !replay.playing) return;
+    const step = Math.max(40, 4000 / replay.speed);
+    const t = setInterval(() => {
+      const s = useStore.getState();
+      const next = s.replay.index + 1;
+      if (next >= s.history.length) {
+        useStore.setState({ replay: { ...s.replay, index: s.history.length - 1, playing: false } });
+      } else {
+        useStore.setState({ replay: { ...s.replay, index: next } });
+      }
+    }, step);
+    return () => clearInterval(t);
+  }, [replay.active, replay.playing, replay.speed]);
+
+  if (!replay.active) return null;
+  const clock = ts ? new Date(ts).toLocaleTimeString([], { hour12: false }) : "--:--:--";
+
+  return (
+    <div className="pointer-events-auto absolute bottom-[calc(1rem+var(--safe-bottom))] left-1/2 z-40 flex w-[min(94vw,32rem)] -translate-x-1/2 items-center gap-3 rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel/90 px-3 py-2.5 backdrop-blur-md">
+      <button
+        type="button"
+        onClick={toggleReplayPlay}
+        aria-label={replay.playing ? "Pausar" : "Reproducir"}
+        className="shrink-0 text-tac-accent hover:text-tac-text"
+      >
+        {replay.playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+      </button>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(0, frames - 1)}
+        value={replay.index}
+        onChange={(e) => setReplayIndex(Number(e.target.value))}
+        className="h-1 flex-1 cursor-pointer accent-tac-accent"
+      />
+      <span className="shrink-0 font-mono text-[11px] tabular-nums text-tac-text">{clock}</span>
+      <button
+        type="button"
+        onClick={cycleReplaySpeed}
+        title="Velocidad"
+        className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-tac-muted hover:text-tac-text"
+      >
+        <Gauge className="h-3.5 w-3.5" />
+        {replay.speed}x
+      </button>
+      <button type="button" onClick={exitReplay} aria-label="Salir de reproducción" className="shrink-0 text-tac-muted hover:text-tac-text">
+        <X className="h-4 w-4" />
+      </button>
     </div>
   );
 }

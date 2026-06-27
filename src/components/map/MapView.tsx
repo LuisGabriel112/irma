@@ -60,6 +60,7 @@ export default function MapView() {
   const navLayerRef = useRef<L.LayerGroup | null>(null);
   const alertsLayerRef = useRef<L.LayerGroup | null>(null);
   const casevacLayerRef = useRef<L.LayerGroup | null>(null);
+  const replayLayerRef = useRef<L.LayerGroup | null>(null);
   const measureRef = useRef<LatLng[]>([]);
   const firstFixRef = useRef(false);
   const coarseFixWarnedRef = useRef(false);
@@ -74,6 +75,8 @@ export default function MapView() {
   const fenceFlash = useStore((s) => s.fenceFlash);
   const alerts = useStore((s) => s.alerts);
   const casevacs = useStore((s) => s.casevacs);
+  const replayActive = useStore((s) => s.replay.active);
+  const replayIndex = useStore((s) => s.replay.index);
   const draft = useStore((s) => s.draft);
   const navTargetId = useStore((s) => s.navTargetId);
   const selfLat = useStore((s) => s.self.lat);
@@ -118,6 +121,7 @@ export default function MapView() {
     navLayerRef.current = L.layerGroup().addTo(map);
     alertsLayerRef.current = L.layerGroup().addTo(map);
     casevacLayerRef.current = L.layerGroup().addTo(map);
+    replayLayerRef.current = L.layerGroup().addTo(map);
     draftLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("dragstart", () => useStore.getState().setFollowSelf(false));
@@ -159,6 +163,7 @@ export default function MapView() {
       navLayerRef.current = null;
       alertsLayerRef.current = null;
       casevacLayerRef.current = null;
+      replayLayerRef.current = null;
       firstFixRef.current = false;
       coarseFixWarnedRef.current = false;
     };
@@ -641,6 +646,43 @@ export default function MapView() {
     }
   }
 
+  // Mission replay: draw every unit at the selected history frame plus its path
+  // up to that moment. Live layers are hidden while replay is active.
+  function pushReplay() {
+    const layer = replayLayerRef.current;
+    if (!layer || !mapRef.current) return;
+    layer.clearLayers();
+    const st = useStore.getState();
+    if (!st.replay.active) return;
+    const frame = st.history[st.replay.index];
+    if (!frame) return;
+
+    const byUnit: Record<string, [number, number][]> = {};
+    for (const fr of st.history.slice(0, st.replay.index + 1)) {
+      for (const u of fr.units) (byUnit[u.id] ??= []).push([u.lat, u.lng]);
+    }
+    for (const pts of Object.values(byUnit)) {
+      if (pts.length > 1) {
+        L.polyline(pts, { color: "#94a3b8", weight: 1.5, opacity: 0.45, dashArray: "1 4" }).addTo(layer);
+      }
+    }
+    for (const u of frame.units) {
+      const sym = renderSymbol(defaultSidc(u.affiliation), 30);
+      L.marker([u.lat, u.lng], {
+        icon: L.divIcon({
+          className: "irma-mil",
+          html: sym.svg,
+          iconSize: [sym.width, sym.height],
+          iconAnchor: [sym.anchorX, sym.anchorY],
+        }),
+      })
+        .bindTooltip(`<span style="color:${AFFILIATION_COLORS[u.affiliation]}">${esc(u.callsign)}</span>`, {
+          permanent: true, direction: "top", offset: [0, -sym.anchorY], className: "irma-tip",
+        })
+        .addTo(layer);
+    }
+  }
+
   function handleMeasure(at: LatLng) {
     const layer = measureLayerRef.current;
     const map = mapRef.current;
@@ -718,6 +760,26 @@ export default function MapView() {
     pushCasevacs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [casevacs]);
+
+  // Replay mode: hide the live unit/trail layers and show the history overlay.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const live = [peersLayerRef.current, trailsLayerRef.current, selfMarkerRef.current, accuracyRef.current];
+    if (replayActive) {
+      live.forEach((l) => l && map.hasLayer(l) && map.removeLayer(l));
+      pushReplay();
+    } else {
+      replayLayerRef.current?.clearLayers();
+      live.forEach((l) => l && !map.hasLayer(l) && map.addLayer(l));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replayActive]);
+
+  useEffect(() => {
+    if (replayActive) pushReplay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replayIndex]);
 
   useEffect(() => {
     pushNav();

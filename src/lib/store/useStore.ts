@@ -6,6 +6,7 @@ import type {
   Casevac,
   ChatMessage,
   FenceEvent,
+  HistoryFrame,
   LatLng,
   Marker,
   MarkerType,
@@ -93,6 +94,10 @@ export interface StoreState {
   trailsOn: boolean; // render trails on the map
   gridOn: boolean; // render the MGRS grid overlay
 
+  // mission history / replay (ephemeral)
+  history: HistoryFrame[]; // periodic snapshots of all units (oldest first)
+  replay: { active: boolean; index: number; playing: boolean; speed: number };
+
   // geofencing (ephemeral): per-fence, per-unit inside/outside, last evaluation
   fenceState: Record<string, Record<string, boolean>>; // fenceId -> unitId -> inside
   fenceFlash: Record<string, number>; // fenceId -> ts of last breach (map pulse)
@@ -176,6 +181,14 @@ export interface StoreState {
   setStatus(status: UnitStatus): void;
   toggleTrails(): void;
   toggleGrid(): void;
+
+  // mission history / replay
+  recordFrame(): void; // snapshot current unit positions into history
+  startReplay(): void;
+  exitReplay(): void;
+  setReplayIndex(i: number): void;
+  toggleReplayPlay(): void;
+  cycleReplaySpeed(): void;
   toggleGeofence(id: string): void; // mark/unmark a polygon/circle marker as a fence
   setMarkerSymbol(id: string, sidc: string | undefined): void; // set/clear a point's 2525 symbol
   clearFenceEvent(id: string): void; // dismiss a geofence breach banner
@@ -198,6 +211,8 @@ const now = () => Date.now();
 // Breadcrumb trail: cap length and skip points that barely moved, so the trail
 // stays cheap and readable. Distance check is a rough degrees threshold (~10 m).
 const TRAIL_MAX = 80;
+const HISTORY_MAX = 900; // ~1h at one frame / 4s
+const REPLAY_SPEEDS = [1, 4, 16, 60];
 const TRAIL_MIN_DEG = 0.00009; // ~10 m
 function appendTrail(
   trails: Record<string, LatLng[]>,
@@ -468,6 +483,8 @@ export const useStore = create<StoreState>()((set, get) => {
     fenceState: {},
     fenceFlash: {},
     fenceEvents: [],
+    history: [],
+    replay: { active: false, index: 0, playing: false, speed: 4 },
 
     persistIdentity: () => {
       const s = get().self;
@@ -590,6 +607,8 @@ export const useStore = create<StoreState>()((set, get) => {
         fenceState: {},
         fenceFlash: {},
         fenceEvents: [],
+        history: [],
+        replay: { active: false, index: 0, playing: false, speed: 4 },
       });
     },
 
@@ -671,6 +690,8 @@ export const useStore = create<StoreState>()((set, get) => {
         fenceState: {},
         fenceFlash: {},
         fenceEvents: [],
+        history: [],
+        replay: { active: false, index: 0, playing: false, speed: 4 },
       });
     },
 
@@ -889,6 +910,49 @@ export const useStore = create<StoreState>()((set, get) => {
     toggleTrails: () => set((s) => ({ trailsOn: !s.trailsOn })),
 
     toggleGrid: () => set((s) => ({ gridOn: !s.gridOn })),
+
+    recordFrame: () => {
+      const s = get();
+      const units: HistoryFrame["units"] = [];
+      if (s.self.lat != null && s.self.lng != null) {
+        units.push({
+          id: s.self.id, callsign: s.self.callsign, affiliation: s.self.affiliation,
+          lat: s.self.lat, lng: s.self.lng, heading: s.self.heading, status: s.self.status,
+        });
+      }
+      for (const p of Object.values(s.peers)) {
+        units.push({
+          id: p.id, callsign: p.callsign, affiliation: p.affiliation,
+          lat: p.lat, lng: p.lng, heading: p.heading, status: p.status,
+        });
+      }
+      if (units.length === 0) return;
+      set((st) => ({ history: [...st.history, { ts: now(), units }].slice(-HISTORY_MAX) }));
+    },
+
+    startReplay: () =>
+      set((s) => (s.history.length === 0
+        ? {}
+        : { replay: { active: true, index: s.history.length - 1, playing: false, speed: s.replay.speed } })),
+    exitReplay: () => set((s) => ({ replay: { ...s.replay, active: false, playing: false } })),
+    setReplayIndex: (i) =>
+      set((s) => ({
+        replay: { ...s.replay, index: Math.max(0, Math.min(s.history.length - 1, Math.round(i))), playing: false },
+      })),
+    toggleReplayPlay: () =>
+      set((s) => ({
+        replay: {
+          ...s.replay,
+          // Restart from the beginning if play is hit at the end of the timeline.
+          index: s.replay.index >= s.history.length - 1 ? 0 : s.replay.index,
+          playing: !s.replay.playing,
+        },
+      })),
+    cycleReplaySpeed: () =>
+      set((s) => {
+        const i = REPLAY_SPEEDS.indexOf(s.replay.speed);
+        return { replay: { ...s.replay, speed: REPLAY_SPEEDS[(i + 1) % REPLAY_SPEEDS.length] } };
+      }),
 
     toggleGeofence: (id) => {
       const m = get().markers[id];
