@@ -194,6 +194,7 @@ export interface StoreState {
   cycleReplaySpeed(): void;
   toggleGeofence(id: string): void; // mark/unmark a polygon/circle marker as a fence
   setMarkerSymbol(id: string, sidc: string | undefined): void; // set/clear a point's 2525 symbol
+  editMarker(id: string, patch: { label?: string; remark?: string }): void; // annotate a marker
   clearFenceEvent(id: string): void; // dismiss a geofence breach banner
 
   // alerts (distress beacons)
@@ -344,6 +345,7 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
         affiliation: p.affiliation,
         label: p.label,
         coords: p.coords,
+        radius: p.radius,
         color: p.color,
         symbol: p.symbol,
         remark: p.remark,
@@ -1028,6 +1030,34 @@ export const useStore = create<StoreState>()((set, get) => {
       const m = get().markers[id];
       if (!m) return;
       const next: Marker = { ...m, symbol: sidc };
+      set((s) => ({ markers: { ...s.markers, [id]: next } }));
+      void manager.send(
+        encode({
+          kind: "marker",
+          id: next.id,
+          markerType: next.type,
+          affiliation: next.affiliation,
+          label: next.label,
+          coords: next.coords,
+          radius: next.radius,
+          color: next.color,
+          symbol: next.symbol,
+          remark: next.remark,
+          geofence: next.geofence,
+          by: next.createdBy,
+          ts: now(),
+        }),
+      );
+    },
+
+    editMarker: (id, patch) => {
+      const m = get().markers[id];
+      if (!m) return;
+      const next: Marker = {
+        ...m,
+        label: patch.label !== undefined ? (patch.label.trim() || undefined) : m.label,
+        remark: patch.remark !== undefined ? (patch.remark.trim() || undefined) : m.remark,
+      };
       set((s) => ({ markers: { ...s.markers, [id]: next } }));
       void manager.send(
         encode({

@@ -60,6 +60,8 @@ export default function MapView() {
   const alertsLayerRef = useRef<L.LayerGroup | null>(null);
   const casevacLayerRef = useRef<L.LayerGroup | null>(null);
   const replayLayerRef = useRef<L.LayerGroup | null>(null);
+  const openPeerRef = useRef<string | null>(null); // peer id whose popup is open
+  const rebuildingPeersRef = useRef(false); // ignore popupclose fired by clearLayers
   const measureRef = useRef<LatLng[]>([]);
   const firstFixRef = useRef(false);
   const coarseFixWarnedRef = useRef(false);
@@ -217,7 +219,11 @@ export default function MapView() {
   function pushPeers() {
     const layer = peersLayerRef.current;
     if (!layer || !mapRef.current) return; // bail if the map was torn down (logout/unmount)
+    // Markers are rebuilt every refresh; preserve an open popup across the rebuild.
+    const reopenId = openPeerRef.current;
+    rebuildingPeersRef.current = true;
     layer.clearLayers();
+    rebuildingPeersRef.current = false;
     const t = Date.now();
     for (const p of Object.values(useStore.getState().peers)) {
       const stale = t - p.lastSeen > STALE_MS;
@@ -265,7 +271,12 @@ export default function MapView() {
           (telem ? `<div class="irma-pop-r">${telem}</div>` : "") +
           `<div class="irma-pop-r">${seen}${p.battery != null ? ` · ${p.battery}%` : ""}</div></div>`,
       );
+      cm.on("popupopen", () => { openPeerRef.current = p.id; });
+      cm.on("popupclose", () => {
+        if (!rebuildingPeersRef.current && openPeerRef.current === p.id) openPeerRef.current = null;
+      });
       cm.addTo(layer);
+      if (p.id === reopenId) cm.openPopup(); // restore the popup the rebuild closed
     }
   }
 
@@ -439,8 +450,8 @@ export default function MapView() {
           dashArray: "4 3",
           className: fenceClass,
         });
-        if (fence && m.label) {
-          circle.bindTooltip(`<span style="color:${color}">⬡ ${esc(m.label)}</span>`, {
+        if (m.label) {
+          circle.bindTooltip(`<span style="color:${color}">${fence ? "⬡ " : ""}${esc(m.label)}</span>`, {
             permanent: true, direction: "center", className: "irma-tip",
           });
         }
@@ -455,8 +466,8 @@ export default function MapView() {
                 fillOpacity: fence ? 0.08 : 0.15, dashArray: "4 3", className: fenceClass,
               })
             : L.polyline(latlngs, { color, weight: 2, dashArray: "4 3" });
-        if (fence && m.label && m.type === "polygon") {
-          shape.bindTooltip(`<span style="color:${color}">⬡ ${esc(m.label)}</span>`, {
+        if (m.label) {
+          shape.bindTooltip(`<span style="color:${color}">${fence ? "⬡ " : ""}${esc(m.label)}</span>`, {
             permanent: true, direction: "center", className: "irma-tip",
           });
         }

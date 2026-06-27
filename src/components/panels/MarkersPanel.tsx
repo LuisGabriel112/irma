@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Hexagon, MapPin, Shapes, Trash2 } from "lucide-react";
+import { Hexagon, MapPin, Pencil, Shapes, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Dot, EmptyState, Button } from "@/components/ui";
 import { AFFILIATION_LABELS } from "@/lib/types";
@@ -14,13 +14,16 @@ export function MarkersPanel() {
   const removeMarker = useStore((s) => s.removeMarker);
   const toggleGeofence = useStore((s) => s.toggleGeofence);
   const setMarkerSymbol = useStore((s) => s.setMarkerSymbol);
+  const editMarker = useStore((s) => s.editMarker);
   const requestFlyTo = useStore((s) => s.requestFlyTo);
   const setFollowSelf = useStore((s) => s.setFollowSelf);
   const setTool = useStore((s) => s.setTool);
   const [picker, setPicker] = useState<string | null>(null); // marker id whose symbol picker is open
+  const [editing, setEditing] = useState<string | null>(null); // marker id being annotated
 
   const list = Object.values(markers).sort((a, b) => b.createdAt - a.createdAt);
   const pickerMarker = picker ? markers[picker] : null;
+  const editMarkerObj = editing ? markers[editing] : null;
 
   return (
     <div className="flex flex-col">
@@ -105,6 +108,15 @@ export function MarkersPanel() {
               )}
               <button
                 type="button"
+                onClick={() => setEditing(m.id)}
+                title="Nombre / observación"
+                aria-label="Editar nombre del marcador"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-tac)] text-tac-muted hover:text-tac-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tac-accent"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => removeMarker(m.id)}
                 aria-label="Eliminar marcador"
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-tac)] text-tac-muted hover:bg-tac-danger/15 hover:text-tac-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tac-danger"
@@ -169,6 +181,75 @@ export function MarkersPanel() {
           </div>
         </div>
       )}
+
+      {editMarkerObj && (
+        <EditMarkerModal
+          key={editMarkerObj.id}
+          id={editMarkerObj.id}
+          initialLabel={editMarkerObj.label ?? ""}
+          initialRemark={editMarkerObj.remark ?? ""}
+          onSave={(label, remark) => {
+            editMarker(editMarkerObj.id, { label, remark });
+            setEditing(null);
+          }}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditMarkerModal({
+  id,
+  initialLabel,
+  initialRemark,
+  onSave,
+  onClose,
+}: {
+  id: string;
+  initialLabel: string;
+  initialRemark: string;
+  onSave: (label: string, remark: string) => void;
+  onClose: () => void;
+}) {
+  const [label, setLabel] = useState(initialLabel);
+  const [remark, setRemark] = useState(initialRemark);
+  void id;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-xs rounded-[var(--radius-tac)] border border-tac-line bg-tac-panel p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 text-[11px] uppercase tracking-[0.14em] text-tac-muted">Nombre y observación</div>
+        <label className="mb-2 flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-tac-muted">Nombre / etiqueta</span>
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            maxLength={40}
+            autoFocus
+            placeholder="ej. PC ALFA, Sector 2"
+            className="rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg px-2 py-1.5 text-sm text-tac-text focus:border-tac-accent focus:outline-none"
+          />
+        </label>
+        <label className="mb-3 flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-tac-muted">Observación</span>
+          <textarea
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
+            maxLength={140}
+            rows={2}
+            placeholder="Detalle opcional"
+            className="resize-none rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg px-2 py-1.5 text-sm text-tac-text focus:border-tac-accent focus:outline-none"
+          />
+        </label>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={onClose}>Cancelar</Button>
+          <Button variant="accent" className="px-3 py-1.5 text-xs" onClick={() => onSave(label, remark)}>Guardar</Button>
+        </div>
+      </div>
     </div>
   );
 }
