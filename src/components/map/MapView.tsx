@@ -364,40 +364,21 @@ export default function MapView() {
       L.polyline(pts, lineStyle).addTo(layer);
     }
 
-    // Zone + 100 km square identifier (e.g. "14Q QG") near the top-left, so the
-    // per-cell digits read as a full MGRS reference (margin label, like a paper map).
-    const ctr = map.getCenter();
-    const g = toMGRS(ctr.lat, ctr.lng, 1);
-    const square = g ? g.split(" ").slice(0, 2).join(" ") : null;
-    if (square) {
-      const vb = map.getBounds();
-      const nw = vb.getNorthWest();
-      const at: [number, number] = [
-        nw.lat - (nw.lat - ctr.lat) * 0.06,
-        nw.lng + (ctr.lng - nw.lng) * 0.06,
-      ];
-      L.tooltip({ permanent: true, direction: "right", className: "irma-grid-zone", interactive: false, opacity: 1 })
-        .setLatLng(at)
-        .setContent(square)
-        .addTo(layer);
-    }
-
-    // Per-square MGRS reference, centred in each cell (e.g. "01 23" = easting
-    // principal digits + northing). 100 km squares carry MGRS letters elsewhere,
-    // so they get no numeric label. Rendered as permanent tooltips (the same path
-    // unit labels use — reliable, unlike a 0-size divIcon).
+    // Full MGRS reference centred in each cell (e.g. "14Q QG 87 25"). Precision
+    // matches the spacing: 1 km grid -> 2 digits per axis, 10 km -> 1 digit.
+    // 100 km squares carry MGRS letters only, so no numeric label there.
     if (spacing >= 100000) return;
     const eVals: number[] = [];
     const nVals: number[] = [];
     for (let e = Math.floor(minE / spacing) * spacing; e < maxE; e += spacing) eVals.push(e);
     for (let n = Math.floor(minN / spacing) * spacing; n < maxN; n += spacing) nVals.push(n);
     if (eVals.length * nVals.length > 220) return; // too dense to be readable
-    const pad = spacing === 1000 ? 2 : 1;
-    const digits = (v: number) =>
-      String(Math.floor((((v % 100000) + 100000) % 100000) / spacing)).padStart(pad, "0");
+    const prec = spacing === 1000 ? 2 : 1;
     for (const e of eVals) {
       for (const n of nVals) {
         const c = fromUTM({ zone, north, e: e + spacing / 2, n: n + spacing / 2 });
+        const ref = toMGRS(c.lat, c.lng, prec);
+        if (!ref) continue;
         L.tooltip({
           permanent: true,
           direction: "center",
@@ -406,7 +387,7 @@ export default function MapView() {
           opacity: 1,
         })
           .setLatLng([c.lat, c.lng])
-          .setContent(`${digits(e)} ${digits(n)}`)
+          .setContent(ref)
           .addTo(layer);
       }
     }
