@@ -12,7 +12,7 @@ import {
   type Affiliation,
   type LatLng,
 } from "@/lib/types";
-import { formatDistance, formatGrid, formatRelTime, haversine } from "@/lib/geo/utils";
+import { compass, formatDistance, formatGrid, formatRelTime, formatSpeed, haversine } from "@/lib/geo/utils";
 import { fromUTM, toUTM, utmZone } from "@/lib/geo/utm";
 import { applyAffiliation, defaultSidc, renderSymbol } from "@/lib/symbols";
 import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
@@ -269,10 +269,16 @@ export default function MapView() {
         className: "irma-tip",
         opacity: stale ? 0.4 : 1,
       });
+      const telem = [
+        p.heading != null ? `${compass(p.heading)} ${Math.round(p.heading)}°` : "",
+        p.speed != null ? formatSpeed(p.speed) : "",
+        p.accuracy != null ? `±${Math.round(p.accuracy)}m` : "",
+      ].filter(Boolean).join(" · ");
       cm.bindPopup(
         `<div class="irma-pop"><div class="irma-pop-h" style="color:${color}">${esc(p.callsign)}</div>` +
           `<div class="irma-pop-r">${AFFILIATION_LABELS[p.affiliation]}${flagged ? ` · <span style="color:${STATUS_COLORS[p.status!]}">${STATUS_LABELS[p.status!]}</span>` : ""}</div>` +
           `<div class="irma-pop-r irma-grid">${esc(formatGrid(p.lat, p.lng))}</div>` +
+          (telem ? `<div class="irma-pop-r">${telem}</div>` : "") +
           `<div class="irma-pop-r">${seen}${p.battery != null ? ` · ${p.battery}%` : ""}</div></div>`,
       );
       cm.addTo(layer);
