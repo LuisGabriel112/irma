@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Cross, Grid3x3, Navigation, Radio, Route, Video, VideoOff } from "lucide-react";
+import { Cross, Grid3x3, Navigation, QrCode, Radio, Route, Video, VideoOff } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { CasevacForm } from "@/components/CasevacForm";
+import { QrShare } from "@/components/QrShare";
 import { Dot, EmptyState } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
 import {
@@ -132,6 +133,7 @@ export function UnitsPanel() {
   const gridOn = useStore((s) => s.gridOn);
   const toggleGrid = useStore((s) => s.toggleGrid);
   const [casevacOpen, setCasevacOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   const hasFix = self.lat != null && self.lng != null;
   const here = useMemo(
@@ -223,6 +225,16 @@ export function UnitsPanel() {
         <span className="font-medium">Emitir CASEVAC (9-line)</span>
       </button>
       {casevacOpen && <CasevacForm onClose={() => setCasevacOpen(false)} />}
+
+      <button
+        type="button"
+        onClick={() => setQrOpen(true)}
+        className="flex items-center gap-2 border-b border-tac-line px-3 py-2 text-left text-xs text-tac-muted transition-colors hover:bg-tac-panel-2 hover:text-tac-text"
+      >
+        <QrCode className="h-4 w-4" />
+        <span className="font-medium">Compartir sala (QR)</span>
+      </button>
+      {qrOpen && <QrShare onClose={() => setQrOpen(false)} />}
 
       {wsLink && (
         <button

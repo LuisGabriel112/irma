@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Crosshair, KeyRound, LocateFixed, Radio, ShieldCheck } from "lucide-react";
+import { joinFromLocation } from "@/lib/join";
 import { useStore } from "@/lib/store/useStore";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
@@ -35,6 +36,18 @@ export function SetupGate() {
   const [manual, setManual] = useState(false);
   const [latStr, setLatStr] = useState("");
   const [lngStr, setLngStr] = useState("");
+  const [joined, setJoined] = useState(false); // arrived via a shared join link
+
+  // Pre-fill room + passphrase from a scanned join link (?join=...).
+  useEffect(() => {
+    const j = joinFromLocation();
+    if (!j) return;
+    setRoom(j.room);
+    if (j.secret) setSecret(j.secret);
+    setJoined(true);
+    // Strip the secret-bearing query from the URL bar.
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   const useGps = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -93,6 +106,13 @@ export function SetupGate() {
           Configura tu identidad antes de entrar a la red. Nadie aparece en el mapa
           hasta completar el alta.
         </p>
+
+        {joined && (
+          <div className="mb-5 rounded-[var(--radius-tac)] border border-tac-accent/50 bg-tac-accent/10 px-3 py-2 text-[12px] text-tac-text">
+            Te uniste a la sala <span className="font-mono text-tac-accent">{room}</span> por enlace
+            {secret ? " (con clave de cifrado)" : ""}. Completa tu indicativo y entra.
+          </div>
+        )}
 
         <div className="flex flex-col gap-5">
           {/* Callsign */}
