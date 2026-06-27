@@ -12,7 +12,7 @@ import {
   type Affiliation,
   type LatLng,
 } from "@/lib/types";
-import { compass, formatDistance, formatGrid, formatRelTime, formatSpeed, haversine } from "@/lib/geo/utils";
+import { compass, formatDistance, formatGrid, formatRelTime, formatSpeed, haversine, toMGRS } from "@/lib/geo/utils";
 import { fromUTM, toUTM, utmZone } from "@/lib/geo/utm";
 import { applyAffiliation, defaultSidc, renderSymbol } from "@/lib/symbols";
 import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
@@ -362,6 +362,24 @@ export default function MapView() {
         pts.push([p.lat, p.lng]);
       }
       L.polyline(pts, lineStyle).addTo(layer);
+    }
+
+    // Zone + 100 km square identifier (e.g. "14Q QG") near the top-left, so the
+    // per-cell digits read as a full MGRS reference (margin label, like a paper map).
+    const ctr = map.getCenter();
+    const g = toMGRS(ctr.lat, ctr.lng, 1);
+    const square = g ? g.split(" ").slice(0, 2).join(" ") : null;
+    if (square) {
+      const vb = map.getBounds();
+      const nw = vb.getNorthWest();
+      const at: [number, number] = [
+        nw.lat - (nw.lat - ctr.lat) * 0.06,
+        nw.lng + (ctr.lng - nw.lng) * 0.06,
+      ];
+      L.tooltip({ permanent: true, direction: "right", className: "irma-grid-zone", interactive: false, opacity: 1 })
+        .setLatLng(at)
+        .setContent(square)
+        .addTo(layer);
     }
 
     // Per-square MGRS reference, centred in each cell (e.g. "01 23" = easting
