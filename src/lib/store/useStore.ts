@@ -661,6 +661,16 @@ export const useStore = create<StoreState>()((set, get) => {
     setBattery: (battery) => set((s) => ({ self: { ...s.self, battery } })),
 
     connect: async (kind, opts) => {
+      // Adopt the room actually being joined as our identity room, so the QR/link,
+      // StatusBar and the encryption salt all match the wire room (the link panel
+      // lets you change the room at connect time).
+      if (kind === "websocket" && opts?.room) {
+        const room = opts.room.trim().toLowerCase().slice(0, 24) || "alfa";
+        if (room !== get().self.room) {
+          set((s) => ({ self: { ...s.self, room } }));
+          get().persistIdentity();
+        }
+      }
       const self = get().self;
       const center =
         self.lat != null && self.lng != null
