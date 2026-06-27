@@ -50,7 +50,6 @@ export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const selfMarkerRef = useRef<L.Marker | null>(null);
-  const accuracyRef = useRef<L.Circle | null>(null);
   const peersLayerRef = useRef<L.LayerGroup | null>(null);
   const trailsLayerRef = useRef<L.LayerGroup | null>(null);
   const gridLayerRef = useRef<L.LayerGroup | null>(null);
@@ -153,7 +152,6 @@ export default function MapView() {
       setMapReady(false);
       mapRef.current = null;
       selfMarkerRef.current = null;
-      accuracyRef.current = null;
       peersLayerRef.current = null;
       trailsLayerRef.current = null;
       gridLayerRef.current = null;
@@ -193,20 +191,6 @@ export default function MapView() {
       .getElement()
       ?.querySelector(".irma-self-arrow") as HTMLElement | null;
     if (arrow) arrow.style.transform = `translate(-50%, -60%) rotate(${s.heading ?? 0}deg)`;
-
-    if (!accuracyRef.current) {
-      accuracyRef.current = L.circle(ll, {
-        radius: s.accuracy ?? 0,
-        color: "#3ddc84",
-        weight: 1,
-        opacity: 0.4,
-        fillColor: "#3ddc84",
-        fillOpacity: 0.08,
-      }).addTo(map);
-    } else {
-      accuracyRef.current.setLatLng(ll);
-      accuracyRef.current.setRadius(s.accuracy ?? 0);
-    }
 
     if (!firstFixRef.current) {
       // IP/wifi "GPS" on VMs/remote desktops returns ~10km accuracy and a
@@ -770,7 +754,7 @@ export default function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const live = [peersLayerRef.current, trailsLayerRef.current, selfMarkerRef.current, accuracyRef.current];
+    const live = [peersLayerRef.current, trailsLayerRef.current, selfMarkerRef.current];
     if (replayActive) {
       live.forEach((l) => l && map.hasLayer(l) && map.removeLayer(l));
       pushReplay();
