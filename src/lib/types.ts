@@ -29,8 +29,8 @@ export interface Peer {
   id: string;
   callsign: string;
   affiliation: Affiliation;
-  lat: number;
-  lng: number;
+  lat?: number; // undefined until the peer reports a GPS fix (presence-only)
+  lng?: number;
   heading?: number; // degrees, 0 = north
   speed?: number; // m/s
   accuracy?: number; // meters (GPS CE)

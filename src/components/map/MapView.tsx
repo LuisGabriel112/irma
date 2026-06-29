@@ -226,6 +226,7 @@ export default function MapView() {
     rebuildingPeersRef.current = false;
     const t = Date.now();
     for (const p of Object.values(useStore.getState().peers)) {
+      if (p.lat == null || p.lng == null) continue; // present but no GPS fix — no pin
       const stale = t - p.lastSeen > STALE_MS;
       const color = AFFILIATION_COLORS[p.affiliation];
       const rel = formatRelTime(p.lastSeen);
@@ -574,7 +575,8 @@ export default function MapView() {
     if (!id || st.self.lat == null || st.self.lng == null) return;
     const from: LatLng = { lat: st.self.lat, lng: st.self.lng };
     let to: LatLng | null = null;
-    if (st.peers[id]) to = { lat: st.peers[id].lat, lng: st.peers[id].lng };
+    const peer = st.peers[id];
+    if (peer && peer.lat != null && peer.lng != null) to = { lat: peer.lat, lng: peer.lng };
     else if (st.markers[id]) to = st.markers[id].coords[0];
     if (!to) return;
     L.polyline(
@@ -806,8 +808,8 @@ export default function MapView() {
     let target: [number, number] | null = null;
     if (id === st.self.id && st.self.lat != null && st.self.lng != null) {
       target = [st.self.lat, st.self.lng];
-    } else if (st.peers[id]) {
-      target = [st.peers[id].lat, st.peers[id].lng];
+    } else if (st.peers[id] && st.peers[id].lat != null && st.peers[id].lng != null) {
+      target = [st.peers[id].lat!, st.peers[id].lng!];
     } else if (st.markers[id]) {
       target = [st.markers[id].coords[0].lat, st.markers[id].coords[0].lng];
     } else if (st.casevacs[id]) {

@@ -61,9 +61,10 @@ export function NavHud() {
 
   let to: LatLng | null = null;
   let label = "";
-  if (peers[navTargetId]) {
-    to = { lat: peers[navTargetId].lat, lng: peers[navTargetId].lng };
-    label = peers[navTargetId].callsign;
+  const navPeer = peers[navTargetId];
+  if (navPeer && navPeer.lat != null && navPeer.lng != null) {
+    to = { lat: navPeer.lat, lng: navPeer.lng };
+    label = navPeer.callsign;
   } else if (markers[navTargetId]) {
     to = markers[navTargetId].coords[0];
     label = markers[navTargetId].label ?? "Marcador";

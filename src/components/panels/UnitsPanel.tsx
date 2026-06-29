@@ -46,8 +46,9 @@ function PeerRow({
   const unwatchPeer = useStore((s) => s.unwatchPeer);
   const wsLink = useStore((s) => s.connection.kind === "websocket" && s.connection.state === "connected");
 
-  const dist = here ? haversine(here, peer) : null;
-  const brg = here ? bearing(here, peer) : null;
+  const peerLL = peer.lat != null && peer.lng != null ? { lat: peer.lat, lng: peer.lng } : null;
+  const dist = here && peerLL ? haversine(here, peerLL) : null;
+  const brg = here && peerLL ? bearing(here, peerLL) : null;
   const stale = Date.now() - peer.lastSeen > 30_000;
 
   return (
@@ -148,7 +149,12 @@ export function UnitsPanel() {
 
   const sorted = useMemo(() => {
     const list = Object.values(peers);
-    if (here) return list.sort((a, b) => haversine(here, a) - haversine(here, b));
+    if (here) {
+      // No-fix peers (lat/lng undefined) sort to the bottom via Infinity.
+      const d = (p: Peer) =>
+        p.lat != null && p.lng != null ? haversine(here, { lat: p.lat, lng: p.lng }) : Infinity;
+      return list.sort((a, b) => d(a) - d(b));
+    }
     return list.sort((a, b) => b.lastSeen - a.lastSeen);
   }, [peers, here]);
 

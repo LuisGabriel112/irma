@@ -21,8 +21,8 @@ export interface PositionPacket {
   id: string; // sender peer id
   callsign: string;
   affiliation: Affiliation;
-  lat: number;
-  lng: number;
+  lat?: number; // omitted when the sender has no GPS fix yet (presence only)
+  lng?: number;
   heading?: number;
   speed?: number;
   accuracy?: number;
@@ -184,9 +184,10 @@ function toWire(p: Packet): Wire {
   switch (p.kind) {
     case "position": {
       const w: Wire = {
-        t: TYPE.position, i: p.id, c: p.callsign, a: AFF[p.affiliation],
-        la: r6(p.lat), ln: r6(p.lng), ts: p.ts,
+        t: TYPE.position, i: p.id, c: p.callsign, a: AFF[p.affiliation], ts: p.ts,
       };
+      if (p.lat != null) w.la = r6(p.lat);
+      if (p.lng != null) w.ln = r6(p.lng);
       if (p.heading != null) w.h = Math.round(p.heading);
       if (p.speed != null) w.s = Math.round(p.speed * 10) / 10;
       if (p.accuracy != null) w.ac = Math.round(p.accuracy);
@@ -265,7 +266,9 @@ function fromWire(w: Wire): Packet | null {
         return {
           kind, id: String(w.i), callsign: String(w.c),
           affiliation: AFF_REV[w.a as string] ?? "unknown",
-          lat: Number(w.la), lng: Number(w.ln), ts: Number(w.ts),
+          lat: w.la != null ? Number(w.la) : undefined,
+          lng: w.ln != null ? Number(w.ln) : undefined,
+          ts: Number(w.ts),
           heading: w.h != null ? Number(w.h) : undefined,
           speed: w.s != null ? Number(w.s) : undefined,
           accuracy: w.ac != null ? Number(w.ac) : undefined,

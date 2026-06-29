@@ -252,6 +252,7 @@ function evaluateFences(get: () => StoreState, set: SetFn): void {
     units.push({ id: st.self.id, name: st.self.callsign, lat: st.self.lat, lng: st.self.lng });
   }
   for (const p of Object.values(st.peers)) {
+    if (p.lat == null || p.lng == null) continue; // no fix yet — skip geofencing
     units.push({ id: p.id, name: p.callsign, lat: p.lat, lng: p.lng });
   }
 
@@ -321,7 +322,10 @@ function applyPacket(state: StoreState, p: Packet, set: SetFn): void {
       };
       set((s) => ({
         peers: { ...s.peers, [peer.id]: peer },
-        trails: appendTrail(s.trails, peer.id, { lat: peer.lat, lng: peer.lng }),
+        trails:
+          peer.lat != null && peer.lng != null
+            ? appendTrail(s.trails, peer.id, { lat: peer.lat, lng: peer.lng })
+            : s.trails,
       }));
       break;
     }
@@ -725,7 +729,8 @@ export const useStore = create<StoreState>()((set, get) => {
 
     broadcastPosition: () => {
       const s = get().self;
-      if (s.lat == null || s.lng == null) return;
+      // Beacon even without a GPS fix: lat/lng go out undefined so teammates
+      // still register us as present (visible in the unit list, no map pin).
       const packet: Packet = {
         kind: "position",
         id: s.id,
@@ -742,7 +747,9 @@ export const useStore = create<StoreState>()((set, get) => {
         ts: now(),
       };
       void manager.send(encode(packet));
-      set((st) => ({ trails: appendTrail(st.trails, s.id, { lat: s.lat!, lng: s.lng! }) }));
+      if (s.lat != null && s.lng != null) {
+        set((st) => ({ trails: appendTrail(st.trails, s.id, { lat: s.lat!, lng: s.lng! }) }));
+      }
       // Reuse the 5s beacon to pull any newly-seen peers into the video mesh.
       if (get().videoBroadcasting) void mesh.startBroadcast(Object.keys(get().peers));
     },
@@ -956,6 +963,7 @@ export const useStore = create<StoreState>()((set, get) => {
         });
       }
       for (const p of Object.values(s.peers)) {
+        if (p.lat == null || p.lng == null) continue; // no fix — nothing to replay
         units.push({
           id: p.id, callsign: p.callsign, affiliation: p.affiliation,
           lat: p.lat, lng: p.lng, heading: p.heading, status: p.status,

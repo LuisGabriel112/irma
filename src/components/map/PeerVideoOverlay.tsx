@@ -71,6 +71,7 @@ export function PeerVideoOverlay({ map }: { map: L.Map }) {
       })()}
       {live.map((id) => {
         const peer = peers[id];
+        if (!peer || peer.lat == null || peer.lng == null) return null; // no fix — no anchor
         const pt = map.latLngToContainerPoint([peer.lat, peer.lng]);
         const color = AFFILIATION_COLORS[peer.affiliation];
         return (
