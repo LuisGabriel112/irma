@@ -2,435 +2,204 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>IRMA — Documento explicativo</title>
+<title>IRMA — Presentación</title>
 <style>
   @page { size: A4 landscape; margin: 0; }
   * { box-sizing: border-box; }
   html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: "Segoe UI", system-ui, sans-serif; color: #25313a; margin: 0; background: #0b1f17; }
   .slide {
-    width: 297mm; height: 210mm; padding: 16mm 20mm; background: #fff;
+    width: 297mm; height: 210mm; padding: 18mm 22mm; background: #fff;
     page-break-after: always; position: relative; overflow: hidden; display: flex; flex-direction: column;
   }
   .slide:last-child { page-break-after: auto; }
-  .kicker { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #1b6b4f; font-weight: 700; margin-bottom: 5px; }
-  h1 { color: #0b3d2e; font-size: 46px; line-height: 1.06; margin: 0 0 8px; letter-spacing: -.5px; }
-  h2 { color: #0b3d2e; font-size: 30px; line-height: 1.1; margin: 0 0 10px; letter-spacing: -.3px; }
-  h3 { color: #1b6b4f; font-size: 15px; margin: 10px 0 3px; }
-  p { font-size: 15px; line-height: 1.5; margin: 6px 0; color: #2f3e38; }
-  .lead { font-size: 19px; color: #1b6b4f; line-height: 1.45; }
-  ul { margin: 5px 0; padding-left: 18px; }
-  li { font-size: 14.5px; line-height: 1.5; margin: 3px 0; }
+  .kicker { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #1b6b4f; font-weight: 700; margin-bottom: 6px; }
+  h1 { color: #0b3d2e; font-size: 50px; line-height: 1.05; margin: 0 0 10px; letter-spacing: -.5px; }
+  h2 { color: #0b3d2e; font-size: 36px; line-height: 1.1; margin: 0 0 14px; letter-spacing: -.3px; }
+  h3 { color: #1b6b4f; font-size: 16px; margin: 12px 0 4px; }
+  p { font-size: 17px; line-height: 1.55; margin: 8px 0; color: #2f3e38; }
+  .lead { font-size: 23px; color: #1b6b4f; line-height: 1.4; font-weight: 600; }
+  ul { margin: 8px 0; padding-left: 20px; }
+  li { font-size: 17px; line-height: 1.6; margin: 7px 0; }
   .foot {
-    position: absolute; bottom: 9mm; left: 20mm; right: 20mm; display: flex;
-    justify-content: space-between; align-items: center; font-size: 10px; color: #8aa99b;
-    border-top: 1px solid #e0ebe5; padding-top: 6px;
+    position: absolute; bottom: 10mm; left: 22mm; right: 22mm; display: flex;
+    justify-content: space-between; align-items: center; font-size: 11px; color: #8aa99b;
+    border-top: 1px solid #e0ebe5; padding-top: 7px;
   }
   .num { font-weight: 700; color: #1b6b4f; }
   .cover { background: linear-gradient(135deg, #0b3d2e, #08160f); color: #eafff6; justify-content: center; }
-  .cover h1 { color: #fff; font-size: 84px; letter-spacing: 7px; margin-bottom: 2px; }
-  .cover .sub { color: #9fe6c6; font-size: 22px; }
-  .cover .meta { color: #6fbf98; font-size: 13px; margin-top: 30px; }
-  .two { display: flex; gap: 26px; flex: 1; align-items: flex-start; }
-  .two > div { flex: 1; }
-  .note { background: #f3f7f9; border: 1px solid #cfdce2; border-radius: 6px; padding: 11px 15px; margin: 10px 0; font-size: 14px; color: #2a3f49; }
-  .note b { color: #1d4a60; }
-  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13.5px; }
-  th, td { border: 1px solid #cdddd5; padding: 6px 9px; text-align: left; vertical-align: top; }
-  th { background: #0b3d2e; color: #eafff6; font-size: 12.5px; }
-  tr:nth-child(even) td { background: #f4f9f6; }
-  .grid2 { display: flex; gap: 16px; flex-wrap: wrap; }
-  .card { flex: 1 1 45%; min-width: 44%; border: 1px solid #cdddd5; border-radius: 8px; padding: 11px 14px; background: #fafdfb; }
-  .card h3 { margin: 0 0 3px; color: #0b3d2e; font-size: 15px; }
-  .card p { font-size: 13px; margin: 0; color: #4a5a52; }
+  .cover h1 { color: #fff; font-size: 92px; letter-spacing: 8px; margin-bottom: 4px; }
+  .cover .sub { color: #9fe6c6; font-size: 26px; }
+  .cover .meta { color: #6fbf98; font-size: 15px; margin-top: 34px; }
+  .center { justify-content: center; }
+  .grid2 { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+  .card { flex: 1 1 30%; min-width: 30%; border: 1px solid #cdddd5; border-radius: 10px; padding: 16px 18px; background: #fafdfb; }
+  .card h3 { margin: 0 0 5px; color: #0b3d2e; font-size: 19px; }
+  .card p { font-size: 15px; margin: 0; color: #4a5a52; line-height: 1.45; }
   .em { color: #0b3d2e; font-weight: 700; }
-  .mono { font-family: Consolas, monospace; }
-  figure { margin: 6px 0; text-align: center; }
-  figcaption { font-size: 11px; color: #6b8577; margin-top: 4px; font-style: italic; }
-  svg { max-width: 100%; height: auto; }
+  .big { font-size: 21px; line-height: 1.5; }
+  .note { background: #f3f7f9; border: 1px solid #cfdce2; border-radius: 6px; padding: 14px 18px; margin: 14px 0; font-size: 17px; color: #2a3f49; }
+  .note b { color: #0b3d2e; }
+  /* Screenshot slides */
+  .shot { padding: 14mm 16mm; }
+  .shot .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+  .shot h2 { margin: 0; font-size: 30px; }
+  .shot .cap { font-size: 16px; color: #4a5a52; margin: 0; }
+  .frame {
+    flex: 1; min-height: 0; border: 1px solid #1b3d2e; border-radius: 10px; overflow: hidden;
+    background: #0b1f17; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(11,61,46,.18);
+  }
+  .frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .divider { background: linear-gradient(135deg, #0b3d2e, #08160f); color: #eafff6; justify-content: center; }
+  .divider h1 { color: #fff; font-size: 64px; margin-bottom: 8px; }
+  .divider .sub { color: #9fe6c6; font-size: 22px; }
 </style>
 </head>
 <body>
 
 <!-- 1 · PORTADA -->
 <section class="slide cover">
-  <div class="kicker" style="color:#6fbf98">Conciencia situacional</div>
+  <div class="kicker" style="color:#6fbf98">Conciencia situacional en vivo</div>
   <h1>IRMA</h1>
-  <div class="sub">Sistema de conciencia situacional</div>
-  <div class="meta">Documento explicativo</div>
+  <div class="sub">Ver a tu unidad en el mapa, en tiempo real</div>
+  <div class="meta">Mando y control táctil para el terreno</div>
 </section>
 
-<!-- 2 · QUÉ ES + ARQUITECTURA -->
-<section class="slide">
-  <div class="kicker">Qué es y cómo funciona</div>
-  <h2>Un cuadro operacional común, en vivo</h2>
-  <div class="two">
-    <div>
-      <p class="lead">Cada elemento aparece en el mapa de los demás en tiempo real, con
-      herramientas de coordinación y comunicaciones cifradas.</p>
-      <ul>
-        <li><b>Dispositivos:</b> teléfono, tablet o PC. Es una página web; no se instala.</li>
-        <li><b>Sala:</b> un código compartido. Los que usan la misma sala forman una red y se ven.</li>
-        <li><b>Servidor relevo:</b> reenvía el tráfico entre la sala, pero va cifrado: no puede leerlo.</li>
-      </ul>
-      <div class="note">
-        <b>Identidad de la red = sala + clave.</b> Dos elementos se ven y se entienden solo si
-        comparten el mismo código de sala y la misma clave de cifrado.
-      </div>
-    </div>
-    <div>
-      <figure>
-        <svg viewBox="0 0 380 250" width="380" height="250" font-family="Segoe UI, sans-serif">
-          <!-- relay -->
-          <rect x="150" y="100" width="80" height="50" rx="8" fill="#0b3d2e"/>
-          <text x="190" y="123" text-anchor="middle" fill="#eafff6" font-size="12" font-weight="700">RELAY</text>
-          <text x="190" y="138" text-anchor="middle" fill="#9fe6c6" font-size="10">sala</text>
-          <!-- lock -->
-          <rect x="178" y="78" width="24" height="18" rx="3" fill="#3ddc84"/>
-          <path d="M183 78 v-5 a7 7 0 0 1 14 0 v5" fill="none" stroke="#3ddc84" stroke-width="3"/>
-          <text x="190" y="70" text-anchor="middle" fill="#1b6b4f" font-size="9">no puede leer</text>
-          <!-- nodes -->
-          <g fill="#38bdf8">
-            <rect x="20" y="30" width="30" height="20" rx="3"/>
-            <rect x="20" y="115" width="30" height="20" rx="3"/>
-            <rect x="20" y="200" width="30" height="20" rx="3"/>
-            <rect x="330" y="60" width="30" height="20" rx="3"/>
-            <rect x="330" y="170" width="30" height="20" rx="3"/>
-          </g>
-          <g stroke="#9bbcae" stroke-width="1.5" stroke-dasharray="3 3">
-            <line x1="50" y1="40" x2="150" y2="115"/>
-            <line x1="50" y1="125" x2="150" y2="125"/>
-            <line x1="50" y1="210" x2="150" y2="135"/>
-            <line x1="230" y1="118" x2="330" y2="70"/>
-            <line x1="230" y1="132" x2="330" y2="180"/>
-          </g>
-          <text x="190" y="240" text-anchor="middle" fill="#6b8577" font-size="10">elementos de la misma sala</text>
-        </svg>
-        <figcaption>Cada dispositivo manda tráfico cifrado al relevo; el relevo lo reparte a la sala.</figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">02</span> / 13</span></div>
-</section>
-
-<!-- 3 · EMPLEO -->
-<section class="slide">
-  <div class="kicker">Concepto de empleo</div>
-  <h2>Misiones donde aplica</h2>
-  <div class="grid2" style="flex:1; align-content:flex-start;">
-    <div class="card"><h3>Patrullaje terrestre</h3><p>Seguimiento de escuadras y pelotones; control de avance por ejes y fases.</p></div>
-    <div class="card"><h3>Seguridad marítima y costera</h3><p>Posición de unidades de superficie e infantería de marina; vigilancia de sectores.</p></div>
-    <div class="card"><h3>Interdicción</h3><p>Coordinación de puntos de control, cercos y bloqueos sobre el mismo cuadro.</p></div>
-    <div class="card"><h3>Búsqueda y rescate</h3><p>Asignación de sectores de batida y posición de cada brigada en tiempo real.</p></div>
-    <div class="card"><h3>Control territorial</h3><p>Marcado de zonas, perímetros y puntos de interés compartidos a la unidad.</p></div>
-    <div class="card"><h3>Seguridad de instalaciones</h3><p>Perímetros con alarma automática de cruce (geocercas).</p></div>
-  </div>
-  <div class="note"><b>Nivel de empleo:</b> nivel táctico, del elemento individual a la compañía/agrupamiento. Alimenta la conciencia situacional de la unidad en el terreno.</div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">03</span> / 13</span></div>
-</section>
-
-<!-- 4 · POSICIÓN Y CUADRO DE UNIDADES -->
-<section class="slide">
-  <div class="kicker">Ubicación y seguimiento</div>
-  <h2>Posición propia y cuadro de unidades</h2>
-  <div class="two">
-    <div>
-      <h3>Alta y posición propia</h3>
-      <ul>
-        <li>El operador se da de alta con indicativo, sala y clave; nadie aparece hasta completarla.</li>
-        <li>El dispositivo obtiene su posición por GPS y la reporta automáticamente cada pocos segundos.</li>
-        <li>El operador se ve como una flecha orientada al rumbo. Si el GPS es impreciso, fija su punto a mano.</li>
-      </ul>
-      <h3>Cuadro de unidades</h3>
-      <ul>
-        <li>Lista de elementos con distancia, rumbo y antigüedad del último reporte (batería si el dispositivo la expone).</li>
-        <li>Estado de cada elemento: OK, herido, requiere ayuda o fuera de línea.</li>
-        <li>Salud del enlace: cuántos elementos se oyeron en los últimos 30 s.</li>
-      </ul>
-    </div>
-    <div>
-      <figure>
-        <svg viewBox="0 0 380 210" width="380" height="210" font-family="Segoe UI, sans-serif">
-          <rect x="15" y="60" width="46" height="26" rx="4" fill="#3ddc84"/>
-          <text x="38" y="77" text-anchor="middle" fill="#08160f" font-size="11" font-weight="700">TÚ</text>
-          <rect x="95" y="64" width="120" height="18" rx="9" fill="#0b3d2e"/>
-          <text x="155" y="77" text-anchor="middle" fill="#9fe6c6" font-size="10">paquete de posición</text>
-          <line x1="61" y1="73" x2="95" y2="73" stroke="#1b6b4f" stroke-width="2" marker-end="url(#a)"/>
-          <rect x="250" y="55" width="60" height="36" rx="6" fill="#0b3d2e"/>
-          <text x="280" y="77" text-anchor="middle" fill="#eafff6" font-size="11" font-weight="700">RELAY</text>
-          <line x1="215" y1="73" x2="250" y2="73" stroke="#1b6b4f" stroke-width="2" marker-end="url(#a)"/>
-          <g fill="#38bdf8"><rect x="335" y="30" width="28" height="18" rx="3"/><rect x="335" y="100" width="28" height="18" rx="3"/></g>
-          <g stroke="#9bbcae" stroke-width="1.5" stroke-dasharray="3 3">
-            <line x1="310" y1="68" x2="335" y2="40"/><line x1="310" y1="78" x2="335" y2="108"/>
-          </g>
-          <text x="350" y="70" text-anchor="middle" fill="#6b8577" font-size="9">aliados</text>
-          <text x="190" y="150" text-anchor="middle" fill="#6b8577" font-size="11">posición · rumbo · velocidad · precisión · estado</text>
-          <defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#1b6b4f"/></marker></defs>
-        </svg>
-        <figcaption>Tu posición se empaqueta y viaja por el relevo a toda la sala, automáticamente.</figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">04</span> / 13</span></div>
-</section>
-
-<!-- 5 · SÍMBOLOGÍA + MGRS -->
-<section class="slide">
-  <div class="kicker">Símbología y coordenadas</div>
-  <h2>MIL-STD-2525 y cuadrícula MGRS</h2>
-  <div class="two">
-    <div>
-      <h3>Símbología MIL-STD-2525</h3>
-      <p>Elementos y marcadores usan símbología militar normalizada (compatible con OTAN APP-6).
-      El marco indica la afiliación; el ícono interno la función. Cada operador define su función
-      y se transmite con su posición.</p>
-      <figure>
-        <svg viewBox="0 0 360 70" width="360" height="70" font-family="Segoe UI, sans-serif">
-          <rect x="10" y="18" width="44" height="28" rx="2" fill="none" stroke="#38bdf8" stroke-width="3"/>
-          <text x="32" y="62" text-anchor="middle" fill="#4a5a52" font-size="10">Propio</text>
-          <rect x="105" y="16" width="30" height="30" fill="none" stroke="#ff4d4d" stroke-width="3" transform="rotate(45 120 31)"/>
-          <text x="120" y="62" text-anchor="middle" fill="#4a5a52" font-size="10">Hostil</text>
-          <rect x="196" y="17" width="30" height="30" fill="none" stroke="#3ddc84" stroke-width="3"/>
-          <text x="211" y="62" text-anchor="middle" fill="#4a5a52" font-size="10">Neutral</text>
-          <path d="M300 31 a10 10 0 1 1 14 -14 a10 10 0 1 1 14 14 a10 10 0 1 1 -14 14 a10 10 0 1 1 -14 -14" fill="none" stroke="#ffb020" stroke-width="3"/>
-          <text x="314" y="62" text-anchor="middle" fill="#4a5a52" font-size="10">Desconocido</text>
-        </svg>
-      </figure>
-    </div>
-    <div>
-      <h3>Cuadrícula MGRS</h3>
-      <p>Coordenadas en cuadrícula militar (ej. <span class="mono">14Q RG 014 225</span>), en metros.
-      La distancia entre dos puntos se estima directamente. Al superponer la cuadrícula, cada cuadro
-      muestra su <b>referencia MGRS completa</b>.</p>
-      <figure>
-        <svg viewBox="0 0 300 130" width="300" height="130" font-family="Consolas, monospace">
-          <g stroke="#5eead4" stroke-width="1" opacity="0.7">
-            <line x1="20" y1="10" x2="20" y2="110"/><line x1="160" y1="10" x2="160" y2="110"/><line x1="300" y1="10" x2="300" y2="110"/>
-            <line x1="20" y1="10" x2="300" y2="10"/><line x1="20" y1="60" x2="300" y2="60"/><line x1="20" y1="110" x2="300" y2="110"/>
-          </g>
-          <text x="90" y="39" text-anchor="middle" fill="#1b6b4f" font-size="11">14Q RG 87 25</text>
-          <text x="230" y="39" text-anchor="middle" fill="#1b6b4f" font-size="11">14Q RG 88 25</text>
-          <text x="90" y="89" text-anchor="middle" fill="#1b6b4f" font-size="11">14Q RG 87 24</text>
-          <text x="230" y="89" text-anchor="middle" fill="#1b6b4f" font-size="11">14Q RG 88 24</text>
-          <text x="20" y="126" fill="#6b8577" font-size="10">referencia completa en cada cuadro</text>
-        </svg>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">05</span> / 13</span></div>
-</section>
-
-<!-- 6 · CONTROL GRÁFICO -->
-<section class="slide">
-  <div class="kicker">Control gráfico</div>
-  <h2>Medidas de coordinación sobre el mapa</h2>
-  <p>El operador traza gráficos que se difunden de inmediato a toda la red. Equivale a calcar las
-  medidas de coordinación, pero el calco es digital, compartido y se actualiza solo en cada dispositivo.</p>
-  <div class="grid2" style="flex:1; align-content:flex-start;">
-    <div class="card"><h3>Puntos</h3><p>Propio, hostil, neutral o referencia, con símbología 2525 y símbolo de función seleccionable.</p></div>
-    <div class="card"><h3>Líneas</h3><p>Ejes de avance, límites, rutas.</p></div>
-    <div class="card"><h3>Polígonos</h3><p>Sectores, zonas de responsabilidad, áreas de interés.</p></div>
-    <div class="card"><h3>Círculos</h3><p>Radios de acción/seguridad, con distancia en vivo al trazar.</p></div>
-    <div class="card"><h3>Medición</h3><p>Distancia entre dos puntos.</p></div>
-    <div class="card"><h3>Anotación</h3><p>Etiqueta y observación en cada gráfico.</p></div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">06</span> / 13</span></div>
-</section>
-
-<!-- 7 · COMUNICACIONES -->
-<section class="slide">
-  <div class="kicker">Comunicaciones</div>
-  <h2>Mensajería, voz y video</h2>
-  <div class="two">
-    <div>
-      <h3>Mensajería de red</h3>
-      <ul>
-        <li>Texto a toda la red o dirigido a un elemento.</li>
-        <li>Imagen (comprimida) y nota de voz.</li>
-        <li>Ping para señalar atención inmediata.</li>
-      </ul>
-      <h3>Voz y video en vivo</h3>
-      <ul>
-        <li>Cámara como miniatura sobre el símbolo del emisor.</li>
-        <li>Voz por oprimir-para-hablar (push-to-talk).</li>
-        <li>El audio y el video van directos entre dispositivos; no se almacenan en el servidor.</li>
-      </ul>
-    </div>
-    <div>
-      <figure>
-        <svg viewBox="0 0 380 200" width="380" height="200" font-family="Segoe UI, sans-serif">
-          <rect x="20" y="80" width="50" height="34" rx="5" fill="#38bdf8"/>
-          <text x="45" y="101" text-anchor="middle" fill="#06283a" font-size="11" font-weight="700">A</text>
-          <rect x="310" y="80" width="50" height="34" rx="5" fill="#38bdf8"/>
-          <text x="335" y="101" text-anchor="middle" fill="#06283a" font-size="11" font-weight="700">B</text>
-          <rect x="160" y="20" width="60" height="32" rx="6" fill="#0b3d2e"/>
-          <text x="190" y="40" text-anchor="middle" fill="#eafff6" font-size="11" font-weight="700">RELAY</text>
-          <!-- signaling dashed via relay -->
-          <path d="M70 88 L160 45" stroke="#9bbcae" stroke-width="1.6" stroke-dasharray="4 3" fill="none"/>
-          <path d="M310 88 L220 45" stroke="#9bbcae" stroke-width="1.6" stroke-dasharray="4 3" fill="none"/>
-          <text x="190" y="68" text-anchor="middle" fill="#6b8577" font-size="10">1. señalización (por relevo)</text>
-          <!-- direct media -->
-          <path d="M70 104 L310 104" stroke="#3ddc84" stroke-width="3" fill="none" marker-end="url(#b)" marker-start="url(#bb)"/>
-          <text x="190" y="128" text-anchor="middle" fill="#1b6b4f" font-size="11" font-weight="700">2. audio/video directo (P2P)</text>
-          <defs>
-            <marker id="b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#3ddc84"/></marker>
-            <marker id="bb" markerWidth="8" markerHeight="8" refX="0" refY="3" orient="auto"><path d="M6 0 L0 3 L6 6 z" fill="#3ddc84"/></marker>
-          </defs>
-        </svg>
-        <figcaption>Los dispositivos se presentan por el relevo y luego hablan directo; el contenido no pasa por el servidor.</figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">07</span> / 13</span></div>
-</section>
-
-<!-- 8 · RESPUESTA Y COORDINACIÓN -->
-<section class="slide">
-  <div class="kicker">Respuesta y coordinación</div>
-  <h2>Emergencia, navegación, geocercas y CASEVAC</h2>
-  <div class="grid2" style="flex:1; align-content:flex-start;">
-    <div class="card"><h3>Alerta de emergencia</h3><p>Baliza intermitente en la posición del emisor + aviso audible a toda la red. Un toque y el apoyo converge.</p></div>
-    <div class="card"><h3>Navegación a objetivo</h3><p>Distancia y rumbo en vivo a un elemento o marcador, con flecha y línea de referencia.</p></div>
-    <div class="card"><h3>Geocercas</h3><p>Zona (círculo/polígono) convertida en alarma: avisa cuando un elemento entra o sale.</p></div>
-    <div class="card"><h3>CASEVAC 9 líneas</h3><p>Solicitud normalizada de evacuación de heridos, difundida con símbolo de sanidad en el punto.</p></div>
-  </div>
-  <div class="note"><b>En claro:</b> son las acciones críticas de coordinación. Estandarizan qué se comunica y reducen el error en el momento decisivo.</div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">08</span> / 13</span></div>
-</section>
-
-<!-- 9 · REGISTRO -->
-<section class="slide">
-  <div class="kicker">Registro de la operación</div>
-  <h2>Rastros y reproducción de misión</h2>
-  <div class="two">
-    <div>
-      <h3>Rastros de desplazamiento</h3>
-      <p>Línea punteada con el recorrido reciente de cada elemento: muestra procedencia y patrón de
-      movimiento, no solo la posición instantánea.</p>
-      <h3>Reproducción de misión</h3>
-      <p>El sistema registra periódicamente la posición de todos los elementos. Después se reproduce con
-      una línea de tiempo (play/pausa y velocidad variable). Insumo directo para análisis posterior (AAR)
-      y reconstrucción de hechos.</p>
-    </div>
-    <div>
-      <figure>
-        <svg viewBox="0 0 360 170" width="360" height="170" font-family="Segoe UI, sans-serif">
-          <path d="M30 130 C 90 80, 150 120, 210 60 S 300 40, 330 50" fill="none" stroke="#9bbcae" stroke-width="2" stroke-dasharray="2 5"/>
-          <circle cx="330" cy="50" r="6" fill="#3ddc84"/>
-          <text x="330" y="38" text-anchor="middle" fill="#1b6b4f" font-size="10">ahora</text>
-          <circle cx="30" cy="130" r="4" fill="#9bbcae"/>
-          <text x="30" y="150" text-anchor="middle" fill="#6b8577" font-size="10">inicio</text>
-          <!-- timeline bar -->
-          <rect x="30" y="158" width="300" height="6" rx="3" fill="#e0ebe5"/>
-          <rect x="30" y="158" width="210" height="6" rx="3" fill="#3ddc84"/>
-          <circle cx="240" cy="161" r="7" fill="#0b3d2e"/>
-        </svg>
-        <figcaption>Reproduce el movimiento de la unidad a lo largo del tiempo.</figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">09</span> / 13</span></div>
-</section>
-
-<!-- 10 · SEGURIDAD -->
-<section class="slide">
-  <div class="kicker">Seguridad de las comunicaciones</div>
-  <h2>Cifrado de extremo a extremo e incorporación por QR</h2>
-  <div class="two">
-    <div>
-      <p>Todo el tráfico se cifra con <b>AES-256-GCM</b>. La clave nunca se transmite: cada dispositivo
-      la genera por su cuenta a partir de la <b>misma frase</b> compartida.</p>
-      <h3>Cómo se cifra y descifra</h3>
-      <ul>
-        <li><b>Clave:</b> de la frase + el código de sala se deriva la misma clave AES-256 en cada dispositivo (función PBKDF2). Misma frase y sala = misma clave; nada de esto viaja por la red.</li>
-        <li><b>Al enviar:</b> el mensaje se cifra con esa clave y un número aleatorio de un solo uso (nonce). Por el relevo solo salen el nonce y el texto cifrado.</li>
-        <li><b>Al recibir:</b> el destino, con la misma clave y ese nonce, descifra y recupera el mensaje. El cifrado lleva un sello de integridad: si alguien alteró el dato, se rechaza.</li>
-      </ul>
-      <p>La <b>incorporación por QR</b> lleva la sala y la frase: el nuevo elemento lo escanea y entra ya configurado.</p>
-    </div>
-    <div>
-      <figure>
-        <svg viewBox="0 0 400 230" width="400" height="230" font-family="Segoe UI, sans-serif">
-          <!-- emisor -->
-          <rect x="8" y="40" width="92" height="46" rx="6" fill="#38bdf8"/>
-          <text x="54" y="60" text-anchor="middle" fill="#06283a" font-size="10" font-weight="700">EMISOR</text>
-          <text x="54" y="76" text-anchor="middle" fill="#06283a" font-size="9" font-family="Consolas">"posición X"</text>
-          <!-- paso 1 cifra -->
-          <text x="200" y="34" text-anchor="middle" fill="#1b6b4f" font-size="10" font-weight="700">1 · cifra con la frase</text>
-          <g fill="#3ddc84"><rect x="142" y="52" width="18" height="14" rx="2"/></g>
-          <path d="M146 52 v-4 a5 5 0 0 1 10 0 v4" fill="none" stroke="#3ddc84" stroke-width="2.5"/>
-          <line x1="100" y1="63" x2="255" y2="63" stroke="#1b6b4f" stroke-width="2" marker-end="url(#c)"/>
-          <!-- relay -->
-          <rect x="258" y="40" width="120" height="46" rx="6" fill="#0b3d2e"/>
-          <text x="318" y="58" text-anchor="middle" fill="#eafff6" font-size="10" font-weight="700">SERVIDOR RELEVO</text>
-          <text x="318" y="74" text-anchor="middle" fill="#7fcfa8" font-size="10" font-family="Consolas">solo ve: a7$f9!x…</text>
-          <text x="318" y="100" text-anchor="middle" fill="#c0392b" font-size="10" font-weight="700">no puede leer</text>
-          <!-- baja -->
-          <line x1="318" y1="118" x2="318" y2="150" stroke="#1b6b4f" stroke-width="2" marker-end="url(#c)"/>
-          <!-- paso 2 descifra -->
-          <text x="200" y="176" text-anchor="middle" fill="#1b6b4f" font-size="10" font-weight="700">2 · descifra con la misma frase</text>
-          <g fill="#3ddc84"><rect x="240" y="165" width="18" height="14" rx="2"/></g>
-          <path d="M244 165 v-4 a5 5 0 0 1 10 0 M254 165 v-4" fill="none" stroke="#3ddc84" stroke-width="2.5"/>
-          <line x1="300" y1="172" x2="100" y2="172" stroke="#1b6b4f" stroke-width="2" marker-end="url(#c)"/>
-          <!-- receptor -->
-          <rect x="8" y="150" width="92" height="46" rx="6" fill="#38bdf8"/>
-          <text x="54" y="170" text-anchor="middle" fill="#06283a" font-size="10" font-weight="700">RECEPTOR</text>
-          <text x="54" y="186" text-anchor="middle" fill="#06283a" font-size="9" font-family="Consolas">"posición X"</text>
-          <defs><marker id="c" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#1b6b4f"/></marker></defs>
-        </svg>
-        <figcaption>El mensaje viaja cifrado todo el trayecto; solo se abre en el receptor con la misma frase.</figcaption>
-      </figure>
-    </div>
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">10</span> / 13</span></div>
-</section>
-
-<!-- 11 · ENLACES -->
-<section class="slide">
-  <div class="kicker">Medios de transmisión</div>
-  <h2>Enlaces de transporte</h2>
-  <table>
-    <tr><th>Enlace</th><th>Medio</th><th>Qué transporta</th><th>Empleo</th></tr>
-    <tr><td><b>Internet (relevo)</b></td><td>Servidor que reenvía a la sala</td><td>Todo: posición, mensajería, imagen, voz, video</td><td>Vía actual donde hay datos celulares o satelitales</td></tr>
-  </table>
-  <p>Hoy el sistema opera sobre el enlace de internet (servidor relevo). El formato de datos es
-  compacto y normalizado, pensado para admitir más adelante otros medios de transporte.</p>
-  <h3>A futuro · tecnología LoRa</h3>
-  <div class="note">
-    Se contempla incorporar la <b>tecnología LoRa</b> (largo alcance, bajo consumo) como enlace
-    alterno para <b>áreas sin cobertura</b> celular o satelital. Llevaría datos compactos
-    (posición, alertas, control gráfico, texto corto); por su ancho de banda no transportaría
-    imagen, voz ni video, que seguirían sobre internet. Requiere hardware específico y validación
-    en campo; aún no está desplegado.
-  </div>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">11</span> / 13</span></div>
-</section>
-
-<!-- 12 · LIMITACIONES -->
-<section class="slide">
-  <div class="kicker">Estado actual y consideraciones</div>
-  <h2>Limitaciones a tener presentes</h2>
-  <ul>
-    <li><b>Video/voz entre redes distintas:</b> operan de forma fiable en una misma red local. Para enlazar redes diferentes (p. ej. celular y satelital) se requiere un servidor adicional de retransmisión aún no desplegado. Posición, mensajería y alertas sí cruzan siempre.</li>
-    <li><b>Cartografía sin conexión:</b> el mapa base aún se descarga en línea. Falta integrar paquetes de cartografía fuera de línea para operación totalmente sin señal.</li>
-    <li><b>Enlace LoRa:</b> el transporte por tecnología LoRa requiere hardware específico para su validación a fondo en campo.</li>
-    <li><b>Capacidad de video:</b> la transmisión simultánea rinde del orden de 6 a 8 elementos; más allá exige otra arquitectura.</li>
-    <li><b>Seguridad operativa:</b> la protección depende del manejo disciplinado de la frase de cifrado, del QR y de los dispositivos.</li>
+<!-- 2 · EL PROBLEMA -->
+<section class="slide center">
+  <div class="kicker">El problema</div>
+  <h2>En el terreno, nadie sabe dónde está nadie</h2>
+  <ul class="big">
+    <li>La posición de cada elemento viaja <b>por radio y de memoria</b>: lenta, imprecisa y fácil de perder.</li>
+    <li>Las medidas de coordinación se calcan <b>a mano</b>; al cambiar algo, no todos se enteran.</li>
+    <li>Una emergencia o un herido se reportan <b>hablando</b>, sin posición exacta ni aviso a toda la fuerza.</li>
+    <li>Equipos como ATAK existen, pero son <b>caros, complejos y dependientes de hardware</b> específico.</li>
   </ul>
-  <div class="foot"><span>IRMA · Documento explicativo</span><span><span class="num">12</span> / 13</span></div>
+  <div class="note"><b>Resultado:</b> decisiones con información incompleta y tardía, justo cuando más cuesta el error.</div>
+  <div class="foot"><span>IRMA</span><span><span class="num">02</span> / 13</span></div>
 </section>
 
-<!-- 13 · RESUMEN -->
-<section class="slide cover">
-  <div class="kicker" style="color:#6fbf98">Resumen de capacidades</div>
-  <h1 style="font-size:38px; letter-spacing:1px; line-height:1.2;">Cuadro operacional común,<br>comunicaciones cifradas y registro</h1>
-  <p style="font-size:16px; color:#cfe7da; max-width:760px; margin-top:14px;">
-    Posición y estado en tiempo real · símbología MIL-STD-2525 · coordenadas y cuadrícula MGRS ·
-    control gráfico · mensajería, imagen y voz · video y voz en vivo · alerta de emergencia ·
-    navegación · geocercas · CASEVAC 9 líneas · rastros · reproducción de la operación ·
-    cifrado de extremo a extremo · incorporación por QR · operación sobre internet o LoRa.
-  </p>
-  <div class="meta" style="font-size:14px; margin-top:24px;">Documento explicativo</div>
+<!-- 3 · QUÉ ES / LA SOLUCIÓN -->
+<section class="slide center">
+  <div class="kicker">La solución</div>
+  <h2>Un cuadro operacional común, en vivo</h2>
+  <p class="lead">Cada elemento aparece en el mapa de todos, en tiempo real, con comunicaciones
+  cifradas y herramientas de coordinación sobre el mismo mapa.</p>
+  <div class="grid2">
+    <div class="card"><h3>Sin instalar nada</h3><p>Es una página web. Funciona en teléfono, tablet o PC. Se entra escaneando un QR.</p></div>
+    <div class="card"><h3>Sala compartida</h3><p>Un código de sala forma la red: todos los que entran se ven entre sí al instante.</p></div>
+    <div class="card"><h3>Cifrado de extremo a extremo</h3><p>Nadie fuera de la sala puede leer el tráfico. Ni siquiera el servidor.</p></div>
+  </div>
+  <div class="note"><b>En claro:</b> abrir la app y entrar a la sala = ver a toda la unidad en el mapa. Listo.</div>
+  <div class="foot"><span>IRMA</span><span><span class="num">03</span> / 13</span></div>
+</section>
+
+<!-- 4 · MEJORES FUNCIONES -->
+<section class="slide">
+  <div class="kicker">Lo que hace</div>
+  <h2>Las funciones que cambian la operación</h2>
+  <div class="grid2" style="flex:1; align-content:flex-start;">
+    <div class="card"><h3>📍 Posición y estado en vivo</h3><p>Cada elemento en el mapa con rumbo, distancia y estado: OK, herido o requiere ayuda.</p></div>
+    <div class="card"><h3>🗺️ Símbología militar + MGRS</h3><p>Símbolos MIL-STD-2525C y cuadrícula militar en metros, como ya trabajan.</p></div>
+    <div class="card"><h3>✏️ Control gráfico compartido</h3><p>Trazas ejes, zonas y puntos; aparecen al instante en el mapa de todos.</p></div>
+    <div class="card"><h3>🎙️ Voz y video en vivo</h3><p>Push-to-talk y cámara directa entre dispositivos, sin pasar por el servidor.</p></div>
+    <div class="card"><h3>🚨 Alerta de emergencia y CASEVAC</h3><p>Un toque avisa a toda la red con la posición exacta. Solicitud de evacuación normalizada.</p></div>
+    <div class="card"><h3>⏪ Rastros y reproducción</h3><p>Recorrido de cada elemento y reproducción de la misión completa para el AAR.</p></div>
+  </div>
+  <div class="foot"><span>IRMA</span><span><span class="num">04</span> / 13</span></div>
+</section>
+
+<!-- 5 · DIVISOR — LA APP EN ACCIÓN -->
+<section class="slide divider center">
+  <div class="kicker" style="color:#6fbf98">Capturas reales</div>
+  <h1>La app en acción</h1>
+  <div class="sub">Mismo mapa, mismas herramientas — en pantalla, en vivo</div>
+</section>
+
+<!-- 6 · POSICIÓN EN VIVO -->
+<section class="slide shot">
+  <div class="head">
+    <h2>Posición y estado en vivo</h2>
+    <p class="cap">Cada elemento en el mapa con símbolo militar, rumbo, distancia y batería.</p>
+  </div>
+  <div class="frame"><img src="screenshots/01-mapa-unidades.png" alt="Mapa con unidades en vivo"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">06</span> / 13</span></div>
+</section>
+
+<!-- 7 · CONTROL GRÁFICO -->
+<section class="slide shot">
+  <div class="head">
+    <h2>Control gráfico compartido</h2>
+    <p class="cap">Geocercas, contactos y trazas; aparecen al instante en el mapa de todos.</p>
+  </div>
+  <div class="frame"><img src="screenshots/03-graficos-marcadores.png" alt="Gráficos y marcadores"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">07</span> / 13</span></div>
+</section>
+
+<!-- 8 · CHAT -->
+<section class="slide shot">
+  <div class="head">
+    <h2>Chat de la sala</h2>
+    <p class="cap">Mensajería de equipo; imágenes y voz cuando hay enlace de relay.</p>
+  </div>
+  <div class="frame"><img src="screenshots/04-chat.png" alt="Chat de la sala"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">08</span> / 13</span></div>
+</section>
+
+<!-- 9 · ENLACES DE MALLA -->
+<section class="slide shot">
+  <div class="head">
+    <h2>Enlaces de malla</h2>
+    <p class="cap">Malla simulada, internet (relay), LoRa USB y Bluetooth; salud del enlace en vivo.</p>
+  </div>
+  <div class="frame"><img src="screenshots/05-enlace-transportes.png" alt="Enlaces y transportes"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">09</span> / 13</span></div>
+</section>
+
+<!-- 10 · CASEVAC -->
+<section class="slide shot">
+  <div class="head">
+    <h2>CASEVAC · 9-line</h2>
+    <p class="cap">Solicitud de evacuación normalizada, con punto de recogida exacto.</p>
+  </div>
+  <div class="frame"><img src="screenshots/06-casevac-9line.png" alt="Formulario CASEVAC 9-line"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">10</span> / 13</span></div>
+</section>
+
+<!-- 11 · SÍMBOLOGÍA + HERRAMIENTAS -->
+<section class="slide shot">
+  <div class="head">
+    <h2>Símbología militar y dibujo</h2>
+    <p class="cap">Marcadores MIL-STD-2525C (aliado, hostil, neutral) y herramientas de trazado.</p>
+  </div>
+  <div class="frame"><img src="screenshots/07-herramientas-simbolos.png" alt="Herramientas y símbolos"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">11</span> / 13</span></div>
+</section>
+
+<!-- 12 · REPRODUCCIÓN -->
+<section class="slide shot">
+  <div class="head">
+    <h2>Reproducción de misión</h2>
+    <p class="cap">Línea de tiempo para revivir el movimiento completo en el AAR.</p>
+  </div>
+  <div class="frame"><img src="screenshots/08-reproduccion-mision.png" alt="Reproducción de misión"></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">12</span> / 13</span></div>
+</section>
+
+<!-- 5 · VENTAJAS PARA ELLOS -->
+<section class="slide center">
+  <div class="kicker">Por qué usarla</div>
+  <h2>Lo que ganan</h2>
+  <ul class="big">
+    <li><b>Decisiones más rápidas y certeras:</b> el mando ve toda la fuerza en un solo cuadro, en vivo.</li>
+    <li><b>Menos error en el momento crítico:</b> emergencias, heridos y coordinación estandarizados.</li>
+    <li><b>Cero costo de equipamiento:</b> corre en los teléfonos que ya tienen; no requiere hardware nuevo.</li>
+    <li><b>Listo en segundos:</b> se entra por QR, sin instalación ni configuración por usuario.</li>
+    <li><b>Seguro:</b> cifrado de extremo a extremo; el contenido nunca queda expuesto.</li>
+  </ul>
+  <div class="note"><b>Se adapta a su forma de operar:</b> símbología, gráficos y procedimientos se ajustan a su unidad y misión — no es una herramienta rígida, evoluciona con sus necesidades.</div>
+  <div class="foot"><span>IRMA</span><span><span class="num">13</span> / 13</span></div>
 </section>
 
 </body>
