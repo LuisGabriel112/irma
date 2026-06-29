@@ -56,17 +56,33 @@ export function SetupGate() {
       return;
     }
     setGeoState("locating");
+    let settled = false;
+    const accept = (pos: GeolocationPosition) => {
+      settled = true;
+      setFix({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+      setFixManual(false);
+      setGeoState("idle");
+    };
+    // Two-stage: a coarse network/wifi fix returns in ~1s so the operator can
+    // join right away; the high-accuracy GPS fix (cold start can take 30s+)
+    // overrides it when it lands. The full-precision watch in AppShell keeps
+    // refining once connected.
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setFix({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
-        setFixManual(false);
-        setGeoState("idle");
+        if (!settled) accept(pos); // only if GPS hasn't already answered
       },
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 },
+    );
+    navigator.geolocation.getCurrentPosition(
+      accept,
       () => {
-        setGeoState("error");
-        setManual(true);
+        if (!settled) {
+          setGeoState("error");
+          setManual(true);
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 20000 },
     );
   };
 
