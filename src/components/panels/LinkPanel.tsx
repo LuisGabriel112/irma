@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bluetooth, Cpu, Globe, LogOut, Plug, PlugZap, Usb } from "lucide-react";
+import { Cpu, Globe, LogOut, Plug, PlugZap } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { Button, SectionTitle } from "@/components/ui";
 import { cn } from "@/lib/util/cn";
@@ -16,8 +16,6 @@ import {
 const OPTIONS: Array<{ kind: TransportKind; icon: React.ReactNode; hint: string }> = [
   { kind: "simulated", icon: <Cpu className="h-4 w-4" />, hint: "Roster demo, sin hardware" },
   { kind: "websocket", icon: <Globe className="h-4 w-4" />, hint: "Amigos por internet (relay + sala)" },
-  { kind: "serial", icon: <Usb className="h-4 w-4" />, hint: "Puente LoRa USB (Web Serial)" },
-  { kind: "bluetooth", icon: <Bluetooth className="h-4 w-4" />, hint: "Puente LoRa BLE (NUS)" },
 ];
 
 const DEFAULT_RELAY = process.env.NEXT_PUBLIC_RELAY_URL ?? "ws://localhost:1234";
@@ -42,7 +40,6 @@ export function LinkPanel() {
   const logout = useStore((s) => s.logout);
 
   const [selected, setSelected] = useState<TransportKind>("websocket");
-  const [baud, setBaud] = useState(115200);
   const [room, setRoom] = useState(self.room);
   const [relayUrl, setRelayUrl] = useState(DEFAULT_RELAY);
   const [callsign, setCallsignDraft] = useState(self.callsign);
@@ -60,7 +57,7 @@ export function LinkPanel() {
 
   const onConnect = async () => {
     try {
-      await connect(selected, { baudRate: baud, room, url: relayUrl });
+      await connect(selected, { room, url: relayUrl });
     } catch {
       /* error reflejado en connection.info + registro */
     }
@@ -147,18 +144,6 @@ export function LinkPanel() {
           );
         })}
 
-        {selected === "serial" && !isConnected && (
-          <label className="flex items-center justify-between px-1 py-1 text-[11px] text-tac-muted">
-            Baudios
-            <input
-              type="number"
-              value={baud}
-              onChange={(e) => setBaud(Number(e.target.value) || 115200)}
-              className="w-24 rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg px-2 py-1 text-right font-mono text-tac-text focus:border-tac-accent focus:outline-none"
-            />
-          </label>
-        )}
-
         {selected === "websocket" && !isConnected && (
           <div className="flex flex-col gap-2 pt-1">
             <label className="flex flex-col gap-1">
@@ -221,12 +206,6 @@ export function LinkPanel() {
       <div className="mx-3 h-28 overflow-y-auto rounded-[var(--radius-tac)] border border-tac-line bg-tac-bg p-2 font-mono text-[10px] leading-relaxed text-tac-muted">
         {log.length === 0 ? <span className="opacity-50">—</span> : log.map((l, i) => <div key={i}>{l}</div>)}
       </div>
-
-      <p className="px-3 pt-3 text-[11px] leading-relaxed text-tac-muted/80">
-        Los enlaces LoRa se conectan a través de un puente de radio USB/BLE que
-        retransmite paquetes delimitados por salto de línea a la malla. Consulta el
-        README para el firmware de referencia.
-      </p>
     </div>
   );
 }
