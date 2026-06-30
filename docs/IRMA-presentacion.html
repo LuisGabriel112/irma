@@ -42,9 +42,10 @@
   .note b { color: #0b3d2e; }
   /* Screenshot slides */
   .shot { padding: 14mm 16mm; }
-  .shot .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
-  .shot h2 { margin: 0; font-size: 30px; }
-  .shot .cap { font-size: 16px; color: #4a5a52; margin: 0; }
+  .shot .head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .shot h2 { margin: 0; font-size: 28px; }
+  .shot .cap { font-size: 15.5px; color: #4a5a52; margin: 0; line-height: 1.45; max-width: 92%; }
+  .shot .cap b { color: #0b3d2e; }
   .frame {
     flex: 1; min-height: 0; border: 1px solid #1b3d2e; border-radius: 10px; overflow: hidden;
     background: #0b1f17; display: flex; align-items: center; justify-content: center;
@@ -60,146 +61,117 @@
 
 <!-- 1 · PORTADA -->
 <section class="slide cover">
-  <div class="kicker" style="color:#6fbf98">Conciencia situacional en vivo</div>
+  <div class="kicker" style="color:#6fbf98">Conciencia situacional de equipo</div>
   <h1>IRMA</h1>
-  <div class="sub">Ver a tu unidad en el mapa, en tiempo real</div>
-  <div class="meta">Mando y control táctil para el terreno</div>
+  <div class="sub">Posición, gráficos y comunicación sobre un mapa compartido</div>
+  <div class="meta">App web instalable · funciona en teléfono, tablet o PC</div>
 </section>
 
-<!-- 2 · EL PROBLEMA -->
+<!-- 2 · QUÉ ES -->
 <section class="slide center">
-  <div class="kicker">El problema</div>
-  <h2>En el terreno, nadie sabe dónde está nadie</h2>
-  <ul class="big">
-    <li>La posición de cada elemento viaja <b>por radio y de memoria</b>: lenta, imprecisa y fácil de perder.</li>
-    <li>Las medidas de coordinación se calcan <b>a mano</b>; al cambiar algo, no todos se enteran.</li>
-    <li>Una emergencia o un herido se reportan <b>hablando</b>, sin posición exacta ni aviso a toda la fuerza.</li>
-    <li>Equipos como ATAK existen, pero son <b>caros, complejos y dependientes de hardware</b> específico.</li>
-  </ul>
-  <div class="note"><b>Resultado:</b> decisiones con información incompleta y tardía, justo cuando más cuesta el error.</div>
-  <div class="foot"><span>IRMA</span><span><span class="num">02</span> / 13</span></div>
-</section>
-
-<!-- 3 · QUÉ ES / LA SOLUCIÓN -->
-<section class="slide center">
-  <div class="kicker">La solución</div>
-  <h2>Un cuadro operacional común, en vivo</h2>
-  <p class="lead">Cada elemento aparece en el mapa de todos, en tiempo real, con comunicaciones
-  cifradas y herramientas de coordinación sobre el mismo mapa.</p>
+  <div class="kicker">Qué es</div>
+  <h2>Un mapa compartido en vivo</h2>
+  <p class="lead">Cada miembro del equipo aparece en el mapa de todos en tiempo real, con
+  comunicaciones cifradas y herramientas de coordinación sobre el mismo mapa.</p>
   <div class="grid2">
-    <div class="card"><h3>Sin instalar nada</h3><p>Es una página web. Funciona en teléfono, tablet o PC. Se entra escaneando un QR.</p></div>
-    <div class="card"><h3>Sala compartida</h3><p>Un código de sala forma la red: todos los que entran se ven entre sí al instante.</p></div>
-    <div class="card"><h3>Cifrado de extremo a extremo</h3><p>Nadie fuera de la sala puede leer el tráfico. Ni siquiera el servidor.</p></div>
+    <div class="card"><h3>Sin instalar nada</h3><p>Es una página web. Corre en teléfono, tablet o PC. Se entra escaneando un QR o con un código de sala.</p></div>
+    <div class="card"><h3>Sala compartida</h3><p>Un código de sala forma la red: todos los que entran se ven entre sí, desde cualquier conexión.</p></div>
+    <div class="card"><h3>Cifrado de extremo a extremo</h3><p>El tráfico de la sala se cifra con una frase compartida; el servidor solo retransmite, no lo lee.</p></div>
   </div>
-  <div class="note"><b>En claro:</b> abrir la app y entrar a la sala = ver a toda la unidad en el mapa. Listo.</div>
-  <div class="foot"><span>IRMA</span><span><span class="num">03</span> / 13</span></div>
+  <div class="note"><b>Cómo se usa:</b> abrir la app, entrar a la sala y conceder la ubicación. A partir de ahí el equipo se ve en el mapa.</div>
+  <div class="foot"><span>IRMA</span><span><span class="num">02</span> / 11</span></div>
 </section>
 
-<!-- 4 · MEJORES FUNCIONES -->
+<!-- 3 · FUNCIONES -->
 <section class="slide">
-  <div class="kicker">Lo que hace</div>
-  <h2>Las funciones que cambian la operación</h2>
+  <div class="kicker">Funciones</div>
+  <h2>Qué incluye</h2>
   <div class="grid2" style="flex:1; align-content:flex-start;">
-    <div class="card"><h3>📍 Posición y estado en vivo</h3><p>Cada elemento en el mapa con rumbo, distancia y estado: OK, herido o requiere ayuda.</p></div>
-    <div class="card"><h3>🗺️ Símbología militar + MGRS</h3><p>Símbolos MIL-STD-2525C y cuadrícula militar en metros, como ya trabajan.</p></div>
-    <div class="card"><h3>✏️ Control gráfico compartido</h3><p>Trazas ejes, zonas y puntos; aparecen al instante en el mapa de todos.</p></div>
-    <div class="card"><h3>🎙️ Voz y video en vivo</h3><p>Push-to-talk y cámara directa entre dispositivos, sin pasar por el servidor.</p></div>
-    <div class="card"><h3>🚨 Alerta de emergencia y CASEVAC</h3><p>Un toque avisa a toda la red con la posición exacta. Solicitud de evacuación normalizada.</p></div>
-    <div class="card"><h3>⏪ Rastros y reproducción</h3><p>Recorrido de cada elemento y reproducción de la misión completa para el AAR.</p></div>
+    <div class="card"><h3>📍 Posición y estado</h3><p>Tocas una unidad en el panel <b>Unidades</b> y el mapa vuela a ella. Cada una muestra rumbo, distancia y estado: OK, Herido o Ayuda.</p></div>
+    <div class="card"><h3>🗺️ Símbología + MGRS</h3><p>Símbolos MIL-STD-2525C. El botón <b>MGRS</b> sobrepone la cuadrícula militar en metros.</p></div>
+    <div class="card"><h3>✏️ Control gráfico</h3><p>Con el dock izquierdo dibujas líneas, zonas y geocercas; aparecen en el mapa de todos al instante.</p></div>
+    <div class="card"><h3>🎙️ Voz y video</h3><p>Mantienes pulsado el botón de voz para hablar (PTT). La cámara va directa entre dispositivos, sin pasar por el servidor.</p></div>
+    <div class="card"><h3>🚨 Alerta y CASEVAC</h3><p>El botón de <b>sirena</b> avisa a toda la red con tu posición. <b>Emitir CASEVAC</b> manda la evacuación de 9 líneas.</p></div>
+    <div class="card"><h3>⏪ Rastros y reproducción</h3><p>El botón <b>Rastros</b> pinta el recorrido. <b>Reproducir misión</b> repite el movimiento del equipo en una línea de tiempo.</p></div>
   </div>
-  <div class="foot"><span>IRMA</span><span><span class="num">04</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">03</span> / 11</span></div>
 </section>
 
-<!-- 5 · DIVISOR — LA APP EN ACCIÓN -->
+<!-- 4 · DIVISOR — LA APP EN ACCIÓN -->
 <section class="slide divider center">
   <div class="kicker" style="color:#6fbf98">Capturas reales</div>
   <h1>La app en acción</h1>
-  <div class="sub">Mismo mapa, mismas herramientas — en pantalla, en vivo</div>
+  <div class="sub">Cada función, en pantalla</div>
 </section>
 
-<!-- 6 · POSICIÓN EN VIVO -->
+<!-- 5 · POSICIÓN EN VIVO -->
 <section class="slide shot">
   <div class="head">
     <h2>Posición y estado en vivo</h2>
-    <p class="cap">Cada elemento en el mapa con símbolo militar, rumbo, distancia y batería.</p>
+    <p class="cap">La flecha verde eres tú, orientada con la brújula del teléfono. Cada compañero aparece con su símbolo militar, rumbo, distancia y batería. Tocas su nombre en el panel <b>Unidades</b> (derecha) y el mapa vuela hasta él.</p>
   </div>
   <div class="frame"><img src="screenshots/01-mapa-unidades.png" alt="Mapa con unidades en vivo"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">06</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">05</span> / 11</span></div>
 </section>
 
-<!-- 7 · CONTROL GRÁFICO -->
+<!-- 6 · CONTROL GRÁFICO -->
 <section class="slide shot">
   <div class="head">
     <h2>Control gráfico compartido</h2>
-    <p class="cap">Geocercas, contactos y trazas; aparecen al instante en el mapa de todos.</p>
+    <p class="cap"><b>El perímetro se traza así:</b> en el dock izquierdo eliges <b>Dibujar ▸ Círculo</b> (o Polígono) y tocas el mapa para definir la zona. En el panel <b>Gráficos</b> la marcas con ⬡ como <b>geocerca</b>. A partir de ahí todos la ven en su mapa y reciben aviso cuando una unidad entra o sale.</p>
   </div>
   <div class="frame"><img src="screenshots/03-graficos-marcadores.png" alt="Gráficos y marcadores"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">07</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">06</span> / 11</span></div>
 </section>
 
-<!-- 8 · CHAT -->
+<!-- 7 · CHAT -->
 <section class="slide shot">
   <div class="head">
     <h2>Chat de la sala</h2>
-    <p class="cap">Mensajería de equipo; imágenes y voz cuando hay enlace de relay.</p>
+    <p class="cap">Escribes en la pestaña <b>Chat</b> y el mensaje llega a todos los de la sala. Con enlace de relay puedes adjuntar imágenes y notas de voz.</p>
   </div>
   <div class="frame"><img src="screenshots/04-chat.png" alt="Chat de la sala"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">08</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">07</span> / 11</span></div>
 </section>
 
-<!-- 9 · ENLACES DE MALLA -->
+<!-- 8 · ENLACES -->
 <section class="slide shot">
   <div class="head">
-    <h2>Enlaces de malla</h2>
-    <p class="cap">Malla simulada, internet (relay), LoRa USB y Bluetooth; salud del enlace en vivo.</p>
+    <h2>Enlaces de red</h2>
+    <p class="cap">En la pestaña <b>Enlace</b> eliges el transporte y conectas: malla simulada para probar, o relay por internet para salir con tu equipo. El punto de estado dice la verdad — <b>verde</b> conectado, <b>ámbar</b> conectando, <b>rojo</b> sin enlace.</p>
   </div>
   <div class="frame"><img src="screenshots/05-enlace-transportes.png" alt="Enlaces y transportes"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">09</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">08</span> / 11</span></div>
 </section>
 
-<!-- 10 · CASEVAC -->
+<!-- 9 · CASEVAC -->
 <section class="slide shot">
   <div class="head">
     <h2>CASEVAC · 9-line</h2>
-    <p class="cap">Solicitud de evacuación normalizada, con punto de recogida exacto.</p>
+    <p class="cap">Botón <b>Emitir CASEVAC (9-line)</b> en el panel Unidades: rellenas las nueve líneas (recogida, pacientes, seguridad, marcado…) y la solicitud se difunde a la red con el punto de recogida exacto ya cargado.</p>
   </div>
   <div class="frame"><img src="screenshots/06-casevac-9line.png" alt="Formulario CASEVAC 9-line"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">10</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">09</span> / 11</span></div>
 </section>
 
-<!-- 11 · SÍMBOLOGÍA + HERRAMIENTAS -->
+<!-- 10 · SÍMBOLOGÍA + HERRAMIENTAS -->
 <section class="slide shot">
   <div class="head">
     <h2>Símbología militar y dibujo</h2>
-    <p class="cap">Marcadores MIL-STD-2525C (aliado, hostil, neutral) y herramientas de trazado.</p>
+    <p class="cap">En <b>Marcadores</b> eliges Aliado (escudo), Hostil (calavera) o Neutral y tocas el mapa para colocarlo. La <b>regla</b> mide distancia y rumbo entre dos toques. El botón de <b>sirena</b> emite la alerta de pánico.</p>
   </div>
   <div class="frame"><img src="screenshots/07-herramientas-simbolos.png" alt="Herramientas y símbolos"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">11</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">10</span> / 11</span></div>
 </section>
 
-<!-- 12 · REPRODUCCIÓN -->
+<!-- 11 · REPRODUCCIÓN -->
 <section class="slide shot">
   <div class="head">
     <h2>Reproducción de misión</h2>
-    <p class="cap">Línea de tiempo para revivir el movimiento completo en el AAR.</p>
+    <p class="cap">Botón <b>Reproducir misión</b> en el panel Unidades: una línea de tiempo repite el movimiento de todo el equipo. Play/pausa, velocidad y salir, abajo del mapa.</p>
   </div>
   <div class="frame"><img src="screenshots/08-reproduccion-mision.png" alt="Reproducción de misión"></div>
-  <div class="foot"><span>IRMA</span><span><span class="num">12</span> / 13</span></div>
-</section>
-
-<!-- 5 · VENTAJAS PARA ELLOS -->
-<section class="slide center">
-  <div class="kicker">Por qué usarla</div>
-  <h2>Lo que ganan</h2>
-  <ul class="big">
-    <li><b>Decisiones más rápidas y certeras:</b> el mando ve toda la fuerza en un solo cuadro, en vivo.</li>
-    <li><b>Menos error en el momento crítico:</b> emergencias, heridos y coordinación estandarizados.</li>
-    <li><b>Cero costo de equipamiento:</b> corre en los teléfonos que ya tienen; no requiere hardware nuevo.</li>
-    <li><b>Listo en segundos:</b> se entra por QR, sin instalación ni configuración por usuario.</li>
-    <li><b>Seguro:</b> cifrado de extremo a extremo; el contenido nunca queda expuesto.</li>
-  </ul>
-  <div class="note"><b>Se adapta a su forma de operar:</b> símbología, gráficos y procedimientos se ajustan a su unidad y misión — no es una herramienta rígida, evoluciona con sus necesidades.</div>
-  <div class="foot"><span>IRMA</span><span><span class="num">13</span> / 13</span></div>
+  <div class="foot"><span>IRMA</span><span><span class="num">11</span> / 11</span></div>
 </section>
 
 </body>

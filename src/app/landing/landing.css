@@ -1,0 +1,93 @@
+/* Landing-scoped styling. Tokens and the app's component CSS (.irma-self etc.)
+   come from globals.css, imported by the root layout; this only adds the few
+   atmospheres the marketing surface needs and the app doesn't. */
+
+/* Faint tactical grid — a surveyor's graticule, not decoration. Sits behind
+   content at low contrast so it reads as a backdrop, never competes. */
+.tac-grid {
+  background-image:
+    linear-gradient(to right, rgba(42, 50, 47, 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42, 50, 47, 0.5) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Fade the mesh canvas into the page at top and bottom so it never hard-edges. */
+.hero-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 72%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 72%,
+    transparent 100%
+  );
+}
+
+/* The map-view mock: dark CARTO-like tiles drawn in CSS so the section can show
+   the self-marker and accuracy ring without shipping Leaflet to the landing. */
+.map-mock {
+  background-color: #0a0e0d;
+  background-image:
+    linear-gradient(to right, rgba(42, 50, 47, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42, 50, 47, 0.35) 1px, transparent 1px),
+    radial-gradient(
+      circle at 38% 64%,
+      rgba(31, 122, 77, 0.16) 0%,
+      transparent 42%
+    );
+  background-size:
+    38px 38px,
+    38px 38px,
+    100% 100%;
+}
+
+/* GPS accuracy ring around the self marker on the map mock. */
+.accuracy-ring {
+  border: 1px solid rgba(61, 220, 132, 0.4);
+  background: radial-gradient(
+    circle,
+    rgba(61, 220, 132, 0.1) 0%,
+    rgba(61, 220, 132, 0.04) 60%,
+    transparent 100%
+  );
+}
+
+/* Smooth in-page scrolling for the section nav, with the standard a11y opt-out. */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Account for the sticky top rail when jumping to an anchored section. */
+.landing-section {
+  scroll-margin-top: 5rem;
+}
+
+/* Scroll cue — a quiet downward nudge, smoothly eased (no bounce). */
+@keyframes hero-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+.hero-nudge {
+  animation: hero-nudge 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-nudge {
+    animation: none;
+  }
+}
