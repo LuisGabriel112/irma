@@ -41,13 +41,13 @@ import {
 const NAV = [
   ["mapa", "Mapa"],
   ["equipo", "Equipo"],
-  ["graficos", "Gráficos"],
-  ["navegacion", "Navegación"],
+  ["graficos", "Dibujos"],
+  ["navegacion", "Guía"],
   ["alertas", "Alertas"],
-  ["comms", "Comms"],
-  ["transportes", "Transportes"],
-  ["protocolo", "Protocolo"],
-  ["arquitectura", "Arquitectura"],
+  ["comms", "Chat"],
+  ["transportes", "Conexión"],
+  ["protocolo", "Los datos"],
+  ["arquitectura", "Cómo funciona"],
 ] as const;
 
 export default function LandingPage() {
@@ -120,27 +120,27 @@ function Hero() {
       <div className="tac-grid pointer-events-none absolute inset-0 opacity-[0.35]" />
       <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Kicker tone="accent">Conciencia situacional táctica · PWA</Kicker>
+          <Kicker tone="accent">Mapa de equipo en vivo · App web</Kicker>
           <span className="hidden h-3 w-px bg-tac-line sm:block" />
-          <Kicker>Referencia: ATAK-CIV, menos el desorden</Kicker>
+          <Kicker>Inspirada en ATAK, mucho más simple</Kicker>
         </div>
         <h1 className="mt-6 max-w-4xl text-balance font-sans text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-[1.02] tracking-[-0.02em] text-tac-text">
-          Posición del equipo, gráficos sobre el terreno y coordinación en un solo instrumento.
+          Ve dónde está tu equipo, marca lo importante y coordínate — todo en un mismo mapa.
         </h1>
         <Prose className="mt-6 max-w-2xl text-[1.0625rem] text-tac-text/85">
-          IRMA es una plataforma de conciencia situacional de clase ATAK,
-          reconstruida como app web instalable. Esta página recorre, una por una,
-          cada función y cómo encaja en el instrumento.
+          IRMA es una app web para que un equipo en el campo se vea en un mismo
+          mapa y trabaje junto. Aquí te explicamos, una por una, cada parte y para
+          qué sirve.
         </Prose>
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <Chip icon={<Dot color="#3ddc84" />} tone="accent">
-            Enlace activo
+            Conexión activa
           </Chip>
           <Chip icon={<MapIcon className="size-3.5" strokeWidth={2} />} tone="muted">
-            Offline-first · instalable
+            Funciona sin internet · se instala
           </Chip>
           <Chip icon={<Network className="size-3.5" strokeWidth={2} />} tone="muted">
-            Transportes conectables
+            Varias formas de conectarse
           </Chip>
         </div>
         <a
@@ -209,19 +209,18 @@ function Manifesto() {
       <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
         <Reveal>
           <p className="max-w-4xl text-balance font-sans text-[clamp(1.5rem,3.2vw,2.4rem)] font-semibold leading-[1.25] tracking-[-0.01em] text-tac-text">
-            No es una app vestida de táctica. Es un{" "}
-            <span className="text-tac-accent">instrumento</span>: fondo casi
-            negro, una sola luz de estado encendida por contexto, números
-            monoespaciados que nunca tiemblan al actualizarse. Se lee de un
-            vistazo — bajo el sol, en movimiento, con guantes.
+            Está pensada para el campo, no para un escritorio. Pantalla{" "}
+            <span className="text-tac-accent">oscura</span>, un solo color de aviso
+            a la vez y números grandes y claros que no bailan al cambiar. Se
+            entiende de un vistazo — bajo el sol, caminando, con guantes puestos.
           </p>
         </Reveal>
         <Reveal delay={80}>
           <div className="mt-12 grid gap-px overflow-hidden rounded-tac border border-tac-line bg-tac-line sm:grid-cols-3">
             {[
-              ["El mapa es el producto", "El cromo es un marco translúcido alrededor del terreno real, nunca un competidor."],
-              ["Honesto sobre el enlace", "Jamás finge conectividad. El transporte activo y su salud siempre son legibles."],
-              ["El movimiento informa", "Cada animación reporta estado — un ping, un pulso de enlace — o no se incluye."],
+              ["El mapa es lo importante", "Todo lo demás son marcos discretos alrededor del mapa; nunca le estorban."],
+              ["Sincera con la conexión", "Nunca finge que hay señal. Siempre ves qué conexión usas y si está bien."],
+              ["Las animaciones avisan", "Cada animación te dice algo —una alerta, una señal— o no está ahí."],
             ].map(([t, d]) => (
               <div key={t} className="bg-tac-bg p-6">
                 <h3 className="font-sans text-[0.95rem] font-semibold text-tac-text">{t}</h3>
@@ -240,24 +239,22 @@ function MapSection() {
     <Section id="mapa" index="01" icon={<MapIcon className="size-4" />} title="El mapa en vivo">
       <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
         <div>
-          <H2>El terreno, en primer plano y sin adornos.</H2>
+          <H2>El mapa, siempre en primer plano.</H2>
           <Prose className="mt-5">
-            Mapa raster oscuro (tiles CARTO, sin API key) sobre Leaflet, elegido a
-            propósito: funciona en cualquier entorno —incluso máquinas virtuales o
-            escritorios remotos sin WebGL— donde un mapa vectorial se caería. Tu
-            posición se dibuja como una flecha de rumbo sobre un pulso suave, con
-            un anillo que representa la precisión real del GPS (CE en metros).
+            Un mapa oscuro que carga rápido y funciona hasta en equipos viejos o
+            con conexiones flojas. Tú apareces como una flecha que apunta hacia
+            donde miras, sobre un pulso suave; el círculo a su alrededor muestra
+            qué tan preciso es tu GPS en ese momento.
           </Prose>
           <Prose className="mt-4">
-            Si concedes el sensor de orientación, la flecha gira con la brújula
-            física del dispositivo. Sin señal GPS, IRMA abre en un centro por
-            defecto y te deja fijar tu ubicación a mano sin que un fix impreciso
-            la sobrescriba.
+            Si le das permiso a la brújula, la flecha gira con el teléfono. Y si te
+            quedas sin GPS, puedes poner tu posición a mano tocando el mapa, sin
+            que una señal mala te la mueva.
           </Prose>
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
-            <Chip tone="accent" icon={<Dot color="#3ddc84" />}>Flecha de rumbo + pulso</Chip>
-            <Chip tone="muted">Anillo de precisión GPS</Chip>
-            <Chip tone="muted">Brújula real del dispositivo</Chip>
+            <Chip tone="accent" icon={<Dot color="#3ddc84" />}>Flecha que apunta a dónde miras</Chip>
+            <Chip tone="muted">Círculo de precisión del GPS</Chip>
+            <Chip tone="muted">Brújula del teléfono</Chip>
           </div>
         </div>
         <Reveal delay={60}>
@@ -270,27 +267,29 @@ function MapSection() {
 
 function TeamSection() {
   return (
-    <Section id="equipo" index="02" icon={<Users className="size-4" />} title="Seguimiento de equipo">
+    <Section id="equipo" index="02" icon={<Users className="size-4" />} title="Dónde está tu equipo">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <H2>Cada unidad, su afiliación, su estado y su última señal.</H2>
+          <H2>Cada compañero, con su color, su estado y su última señal.</H2>
           <Prose className="mt-5">
-            Los pares llegan por la malla y se renderizan por afiliación. El roster
-            del panel derecho lista rango, rumbo, batería, símbolo MIL-STD-2525 y
-            estado operativo de cada unidad — <span className="font-mono text-tac-accent">OK</span>,{" "}
+            Cada quien aparece con un color según sea propio, aliado, neutral u
+            hostil. En la lista de la derecha ves de cada uno: a qué distancia
+            está, hacia dónde, su batería, su símbolo militar y cómo está —{" "}
+            <span className="font-mono text-tac-accent">OK</span>,{" "}
             <span className="font-mono text-tac-danger">HERIDO</span>,{" "}
             <span className="font-mono text-tac-warn">AYUDA</span> o{" "}
-            <span className="font-mono text-tac-muted">FUERA</span>. Un compañero sin
-            fix GPS no desaparece: se muestra como presente, sin coordenadas.
+            <span className="font-mono text-tac-muted">FUERA</span>. Si alguien se
+            queda sin GPS no desaparece: sigue en la lista, solo que sin punto en
+            el mapa.
           </Prose>
           <Prose className="mt-4">
-            La afiliación está bloqueada a cuatro colores reservados y, sobre todo,
-            reforzada con forma: así un déficit rojo-verde nunca lee «hostil» como
-            «aliado». Toca una unidad para volar hacia ella o trazar su rastro de
-            migas (breadcrumbs) histórico.
+            Cada bando tiene su color y también su forma, para que nunca se
+            confunda «hostil» con «aliado» — ni siquiera si te cuesta distinguir el
+            rojo del verde. Tocas a un compañero y el mapa vuela hacia él, o le
+            muestras el rastro de por dónde ha pasado.
           </Prose>
           <div className="mt-8">
-            <Kicker>Bloqueo de afiliación — color + forma</Kicker>
+            <Kicker>Cada bando — color + forma</Kicker>
             <div className="mt-3">
               <AffiliationFrames />
             </div>
@@ -308,7 +307,7 @@ function TeamSection() {
 
 function GraphicsSection() {
   return (
-    <Section id="graficos" index="03" icon={<PencilRuler className="size-4" />} title="Gráficos tácticos">
+    <Section id="graficos" index="03" icon={<PencilRuler className="size-4" />} title="Dibujar en el mapa">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[0.85fr_1.15fr]">
         <Reveal>
           <Panel label="Herramientas" icon={<PencilRuler className="size-3.5" />} className="p-4">
@@ -316,26 +315,25 @@ function GraphicsSection() {
           </Panel>
         </Reveal>
         <div>
-          <H2>Dibuja sobre el terreno; todo se difunde a la red.</H2>
+          <H2>Dibuja sobre el mapa y lo ven todos.</H2>
           <Prose className="mt-5">
-            Coloca marcadores de afiliación y puntos de ruta; traza líneas,
-            polígonos y círculos; mide rango y rumbo entre dos toques. Cada
-            gráfico que creas se transmite a toda la sala, así que el equipo
-            comparte el mismo cuadro táctico en tiempo real.
+            Pones marcadores y puntos de ruta, trazas líneas, zonas y círculos, y
+            mides distancia y dirección con dos toques. Todo lo que dibujas les
+            aparece a los demás al instante, así que todos ven el mismo mapa.
           </Prose>
           <Prose className="mt-4">
-            Un polígono o círculo puede marcarse como{" "}
-            <span className="text-tac-accent">geocerca</span>: IRMA vigila qué
-            unidades entran o salen de la zona y lanza un aviso con sonido en el
-            cruce. La herramienta es el dock izquierdo, de celdas de 40 px
-            operables con guantes; se enciende exactamente una a la vez.
+            Una zona o un círculo puede convertirse en{" "}
+            <span className="text-tac-accent">cerca virtual</span> (geocerca): IRMA
+            avisa con un sonido cuando alguien entra o sale de ella. Las
+            herramientas están en la barra de la izquierda, con botones grandes
+            para usarse con guantes; solo se activa una a la vez.
           </Prose>
           <div className="mt-6 grid gap-px overflow-hidden rounded-tac border border-tac-line bg-tac-line sm:grid-cols-2">
             {[
               ["Marcadores", "Aliado · hostil · neutral · punto de ruta"],
-              ["Dibujo libre", "Línea · polígono · círculo"],
-              ["Regla", "Rango + rumbo entre dos clics"],
-              ["Geocerca", "Aviso de entrada/salida con beep"],
+              ["Dibujo libre", "Línea · zona · círculo"],
+              ["Regla", "Distancia y dirección con dos toques"],
+              ["Cerca virtual", "Avisa al entrar o salir de la zona"],
             ].map(([t, d]) => (
               <div key={t} className="bg-tac-bg px-4 py-3.5">
                 <div className="font-sans text-[0.875rem] font-semibold text-tac-text">{t}</div>
@@ -351,21 +349,20 @@ function GraphicsSection() {
 
 function NavSection() {
   return (
-    <Section id="navegacion" index="04" icon={<Navigation className="size-4" />} title="Navegación a objetivo">
+    <Section id="navegacion" index="04" icon={<Navigation className="size-4" />} title="Guía a un destino">
       <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
         <div>
-          <H2>Selecciona un objetivo: distancia y rumbo en vivo.</H2>
+          <H2>Elige un destino y te guía hasta él.</H2>
           <Prose className="mt-5">
-            El modo <span className="text-tac-accent">bloodhound</span>: elige una
-            unidad o un marcador y IRMA te da distancia y rumbo en vivo hacia él,
-            recalculados con cada paso. La flecha de tu posición, orientada por la
-            brújula del teléfono, te dice no solo dónde está el objetivo sino hacia
-            dónde mirar para alcanzarlo.
+            Eliges a un compañero o un punto del mapa e IRMA te dice a qué
+            distancia está y hacia dónde queda, actualizándolo con cada paso. Con
+            la brújula del teléfono, la flecha te marca hacia dónde caminar para
+            llegar.
           </Prose>
           <Prose className="mt-4">
-            Distancia por haversine, rumbo en grados verdaderos. Todo en mono
-            tabular: el número grande no salta ni reflota mientras cambia, se lee
-            como un velocímetro.
+            El número grande de distancia se lee como un velocímetro: no salta ni
+            parpadea mientras cambia, para que lo entiendas de un vistazo mientras
+            te mueves.
           </Prose>
         </div>
         <Reveal delay={60} className="lg:justify-self-end">
@@ -381,22 +378,22 @@ function AlertSection() {
     <Section id="alertas" index="05" icon={<Siren className="size-4" />} title="Alertas y emergencia">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
-          <H2>Alertas de un toque, difundidas a todo el equipo.</H2>
+          <H2>Una alerta de un toque llega a todo el equipo.</H2>
           <Prose className="mt-5">
-            El botón de pánico transmite tu posición y hace parpadear una baliza
-            roja en el mapa de cada compañero, con aviso sonoro, hasta que se
-            limpia. Las alertas tienen tipo —{" "}
+            El botón de pánico manda tu posición y hace parpadear una señal roja en
+            el mapa de todos, con sonido, hasta que se apaga. Cada alerta tiene
+            tipo —{" "}
             <span className="font-mono text-tac-danger">PÁNICO</span>,{" "}
-            <span className="font-mono text-tac-warn">MÉDICO</span>,{" "}
-            <span className="font-mono text-tac-info">CONTACTO</span> — para que el
-            receptor sepa de inmediato a qué responde.
+            <span className="font-mono text-tac-warn">MÉDICO</span> o{" "}
+            <span className="font-mono text-tac-info">CONTACTO</span> — para que
+            quien la reciba sepa de una a qué responde.
           </Prose>
           <Prose className="mt-4">
-            Para una evacuación, IRMA incluye un formulario{" "}
-            <span className="text-tac-accent">CASEVAC de 9 líneas</span> (MEDEVAC):
-            ubicación de recogida, frecuencia, pacientes por precedencia y tipo,
-            equipo especial, seguridad en el sitio, marcado, nacionalidad y notas
-            de terreno. Se difunde a la red como un paquete más.
+            Para pedir una evacuación hay un formulario{" "}
+            <span className="text-tac-accent">CASEVAC de 9 líneas</span> (el
+            estándar de rescate médico): dónde recoger, cuántos heridos y de qué
+            gravedad, qué equipo hace falta, si hay peligro en el sitio, cómo está
+            marcado y notas del terreno. Se manda a todo el equipo con un toque.
           </Prose>
         </div>
         <div className="space-y-6">
@@ -420,22 +417,21 @@ function AlertSection() {
 
 function CommsSection() {
   return (
-    <Section id="comms" index="06" icon={<MessagesSquare className="size-4" />} title="Comunicación de red">
+    <Section id="comms" index="06" icon={<MessagesSquare className="size-4" />} title="Comunicación">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
-          <H2>Texto, voz y video sobre el mismo enlace.</H2>
+          <H2>Texto, voz y video por la misma conexión.</H2>
           <Prose className="mt-5">
-            Chat de difusión por la red para la coordinación que debe quedar
-            escrita. Cuando el transporte lo permite, IRMA añade voz por{" "}
-            <span className="text-tac-accent">mantener-para-hablar</span> (PTT) y
-            video en vivo entre pares vía WebRTC — útil para confirmar una
-            situación que el texto no alcanza a describir.
+            Un chat para todo lo que conviene dejar por escrito. Si la conexión da,
+            también hay voz —{" "}
+            <span className="text-tac-accent">mantén pulsado para hablar</span>,
+            como un radio — y video en vivo entre dispositivos, útil cuando el
+            texto no alcanza a explicar lo que pasa.
           </Prose>
           <Prose className="mt-4">
-            La voz y el video escalan con el ancho de banda del enlace: ricos sobre
-            relay o Wi-Fi, ausentes cuando el enlace es estrecho, sin que la app
-            pretenda lo contrario. La comunicación sigue la regla de honestidad del
-            enlace.
+            La voz y el video dependen de qué tan buena sea la conexión: van bien
+            por internet o Wi-Fi, y desaparecen cuando la señal es muy justa. La
+            app nunca finge que están si no se puede.
           </Prose>
         </div>
         <Reveal delay={60}>
@@ -448,23 +444,20 @@ function CommsSection() {
 
 function TransportSection() {
   return (
-    <Section id="transportes" index="07" icon={<Radio className="size-4" />} title="Transportes conectables">
+    <Section id="transportes" index="07" icon={<Radio className="size-4" />} title="Formas de conexión">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
-          <H2>Una app, varios enlaces; el estado de cada uno siempre visible.</H2>
+          <H2>Una app, varias formas de conectarse; siempre ves cuál usas.</H2>
           <Prose className="mt-5">
-            La abstracción <span className="font-mono text-tac-accent">Transport</span>{" "}
-            es la decisión de diseño clave: la app envía y recibe{" "}
-            <span className="font-mono">Packet</span>s sobre cualquier enlace. Hoy
-            expone dos: una malla simulada para probar sin hardware y un relay
-            WebSocket que comparte salas por internet. Añadir un enlace nuevo es una
-            sola implementación de <span className="font-mono">Transport</span> — sin
-            tocar la interfaz ni el estado.
+            IRMA puede conectarse de distintas maneras sin cambiar nada de la app.
+            Hoy trae dos: una de prueba, para usarla sin equipo extra, y otra por
+            internet, que junta a tu equipo en una misma sala. Más adelante se
+            pueden sumar otras sin rehacer la app.
           </Prose>
           <Prose className="mt-4">
-            Cada transporte reporta su propio estado con una sola luz: verde
-            conectado, ámbar conectando, rojo sin enlace. El instrumento nunca
-            pinta de verde un enlace muerto.
+            Cada conexión avisa su estado con un solo color: verde conectado,
+            amarillo conectando, rojo sin señal. Nunca verás verde en algo que en
+            realidad está caído.
           </Prose>
         </div>
         <Reveal delay={60}>
@@ -480,31 +473,31 @@ function ProtocolSection() {
  "la":19.4326,"ln":-99.1332,"h":270,"b":88,
  "ts":1718480000000}`;
   const types: [string, string, string][] = [
-    ["0", "posición", "id, callsign, afiliación, lat/lng, rumbo, batería"],
-    ["1", "mensaje", "id, de, a (omitir = difusión), texto"],
-    ["2", "marcador", "id, tipo, afiliación, coords, radio, etiqueta"],
-    ["3", "borrar-marcador", "id"],
-    ["4", "ping", "id, de, lat/lng"],
-    ["5", "alerta", "id, de, tipo (pánico/médico/contacto), lat/lng"],
+    ["0", "posición", "apodo, bando, ubicación, dirección, batería"],
+    ["1", "mensaje", "de quién, para quién (o para todos), texto"],
+    ["2", "marcador", "tipo, bando, dónde, tamaño, etiqueta"],
+    ["3", "borrar marcador", "cuál"],
+    ["4", "señal", "de quién, dónde"],
+    ["5", "alerta", "de quién, tipo (pánico/médico/contacto), dónde"],
   ];
   return (
-    <Section id="protocolo" index="08" icon={<Binary className="size-4" />} title="Protocolo de cable">
-      <H2>JSON compacto: una línea por paquete, claves cortas.</H2>
+    <Section id="protocolo" index="08" icon={<Binary className="size-4" />} title="Cómo viajan los datos">
+      <H2>Mensajes muy cortos para que viajen rápido.</H2>
       <Prose className="mt-5">
-        Cada paquete viaja como una línea de JSON con claves abreviadas para
-        ocupar poco. El campo <span className="font-mono">t</span> es el código de
-        tipo; las afiliaciones se codifican en una letra:{" "}
-        <span className="font-mono">s</span> propio,{" "}
+        Cada dato —una posición, un mensaje, una alerta— viaja como un mensaje
+        muy pequeño para gastar poca red. Abajo, un ejemplo de cómo se ve una
+        posición y la lista de los tipos que existen. Las letras del bando son
+        cortas: <span className="font-mono">s</span> propio,{" "}
         <span className="font-mono">f</span> aliado, <span className="font-mono">n</span>{" "}
         neutral, <span className="font-mono">h</span> hostil,{" "}
         <span className="font-mono">u</span> desconocido.
       </Prose>
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <Reveal>
-          <CodeBlock caption="paquete de posición — packet.ts" code={packet} />
+          <CodeBlock caption="ejemplo: un mensaje de posición" code={packet} />
           <p className="mt-3 font-mono text-[0.6875rem] text-tac-muted">
-            El códec valida el tamaño del paquete antes de transmitir; uno que
-            excede el límite del enlace se rechaza, no se trunca en silencio.
+            Antes de enviar, revisa que el mensaje quepa; si es muy grande lo
+            rechaza en vez de mandarlo a medias.
           </p>
         </Reveal>
         <Reveal delay={80}>
@@ -512,9 +505,9 @@ function ProtocolSection() {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-tac-line bg-tac-panel/60">
-                  <th className="px-3 py-2 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-tac-muted">t</th>
-                  <th className="px-3 py-2 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-tac-muted">tipo</th>
-                  <th className="px-3 py-2 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-tac-muted">campos clave</th>
+                  <th className="px-3 py-2 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-tac-muted">cód.</th>
+                  <th className="px-3 py-2 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-tac-muted">qué es</th>
+                  <th className="px-3 py-2 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-tac-muted">qué lleva</th>
                 </tr>
               </thead>
               <tbody>
@@ -548,28 +541,23 @@ function CotSection() {
   </detail>
 </event>`;
   return (
-    <Section id="cot" index="09" icon={<Network className="size-4" />} title="Interop CoT">
+    <Section id="cot" index="09" icon={<Network className="size-4" />} title="Puente con ATAK">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
-          <H2>Un puente al ecosistema TAK.</H2>
+          <H2>Se conecta con ATAK y otros sistemas TAK.</H2>
           <Prose className="mt-5">
-            IRMA mapea sus paquetes a y desde{" "}
-            <span className="text-tac-accent">Cursor-on-Target</span>, el formato
-            XML que hablan ATAK, WinTAK y TAK Server. Una posición propia se
-            convierte en un <span className="font-mono">{`<event>`}</span> CoT con su
-            tipo de afiliación, punto con precisión (ce) y detalle de contacto —
-            de modo que un equipo en IRMA y otro en ATAK pueden verse en el mismo
-            cuadro.
+            IRMA traduce su información al formato que usan{" "}
+            <span className="text-tac-accent">ATAK</span> y los sistemas TAK (ese
+            formato se llama Cursor-on-Target). Así, un equipo con IRMA y otro con
+            ATAK pueden verse en el mismo mapa, aunque usen apps distintas.
           </Prose>
           <Prose className="mt-4">
-            La afiliación se traduce al esquema de tipo CoT (
-            <span className="font-mono">a-f-…</span> aliado,{" "}
-            <span className="font-mono">a-h-…</span> hostil), preservando el
-            significado entre sistemas.
+            El bando —aliado, hostil, neutral— también se traduce, así que cada
+            quien se ve del lado correcto en los dos sistemas.
           </Prose>
         </div>
         <Reveal delay={60}>
-          <CodeBlock caption="evento CoT generado — cot.ts" code={cot} lang="xml" />
+          <CodeBlock caption="así se ve en el formato de ATAK" code={cot} lang="xml" />
         </Reveal>
       </div>
     </Section>
@@ -583,15 +571,15 @@ function SecuritySection() {
         {[
           {
             t: "Salas compartidas",
-            d: "Un código de sala agrupa al equipo sobre el relay WebSocket. Comparte URL + código por QR y todos se ven en el mapa, desde cualquier red.",
+            d: "Un código de sala junta a tu equipo. Compartes el enlace y el código con un QR, y todos se ven en el mapa desde cualquier internet.",
           },
           {
-            t: "Cifrado de sala",
-            d: "Una frase secreta compartida deriva una clave que cifra el tráfico de la sala de extremo a extremo; la frase nunca sale del dispositivo.",
+            t: "Todo cifrado",
+            d: "Con una frase secreta que solo ustedes conocen, todo lo de la sala viaja cifrado. La frase nunca sale de tu teléfono.",
           },
           {
-            t: "Cuadrícula MGRS",
-            d: "Rejilla y referencias MGRS sobre el mapa, además de lat/lng — el lenguaje de coordenadas que el trabajo de campo espera.",
+            t: "Coordenadas militares",
+            d: "Muestra la cuadrícula y las coordenadas militares (MGRS) sobre el mapa, además de las normales — el sistema que se usa en el campo.",
           },
         ].map((c, i) => (
           <Reveal key={c.t} delay={i * 70}>
@@ -621,15 +609,15 @@ function ArchitectureSection() {
     MapHud · ToolDock · SidePanel · panels/*
     AppShell.tsx      (GPS, brújula, SW)`;
   return (
-    <Section id="arquitectura" index="11" icon={<Cpu className="size-4" />} title="Arquitectura y stack">
+    <Section id="arquitectura" index="11" icon={<Cpu className="size-4" />} title="Cómo está hecha">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
-          <H2>Un núcleo pequeño, un enlace intercambiable.</H2>
+          <H2>Un centro simple; la conexión se cambia sin tocar lo demás.</H2>
           <Prose className="mt-5">
-            Todo converge en el patrón Transport: protocolo, estado y UI no saben
-            ni les importa por qué cable viaja un paquete. Esa frontera limpia es
-            lo que deja que la misma app corra sobre malla simulada o relay de
-            internet sin reescribirse.
+            La app está separada de la forma en que se conecta: lo que ves y lo que
+            hace no dependen de por dónde viajan los datos. Por eso la misma app
+            funciona por internet o en modo de prueba sin reescribir nada. Estas
+            son las piezas con las que está construida:
           </Prose>
           <div className="mt-6 flex flex-wrap gap-2">
             {["Next.js 15", "React 19", "TypeScript", "Tailwind v4", "Leaflet", "Zustand", "MapLibre", "milsymbol"].map((s) => (
@@ -640,7 +628,7 @@ function ArchitectureSection() {
           </div>
         </div>
         <Reveal delay={60}>
-          <CodeBlock caption="estructura del proyecto" code={tree} lang="text" />
+          <CodeBlock caption="cómo está organizado el código" code={tree} lang="text" />
         </Reveal>
       </div>
     </Section>
@@ -655,15 +643,15 @@ function Footer() {
           <div>
             <span className="font-mono text-[0.875rem] font-bold tracking-[0.18em] text-tac-accent">IRMA</span>
             <p className="mt-3 max-w-md text-[0.875rem] leading-relaxed text-tac-text/70">
-              Proyecto educativo y civil de conciencia situacional. No afiliado al
-              TAK Product Center ni al Gobierno de EE. UU.
+              Proyecto educativo y civil. Sin relación con el TAK Product Center ni
+              el Gobierno de EE. UU.
             </p>
           </div>
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 rounded-tac border border-tac-line px-4 py-2.5 font-sans text-[0.8125rem] font-semibold text-tac-text transition-colors hover:border-tac-muted"
           >
-            Abrir el instrumento
+            Abrir la app
             <ArrowUpRight className="size-3.5" strokeWidth={2.5} />
           </Link>
         </div>
