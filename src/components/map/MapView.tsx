@@ -24,9 +24,12 @@ import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
  * (the Leaflet default): no 2D-canvas renderer, which avoids the canvas redraw
  * that races React Strict Mode's dev double-mount (the `clearRect` crash).
  */
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const TILE_ATTR =
-  '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>';
+// CARTO's basemaps.cartocdn.com now requires an API key for anonymous tile
+// requests (returns "API KEY REQUIRED" watermark tiles). Fall back to plain
+// OSM raster tiles, inverted via CSS (see .irma-dark-tiles) to match the
+// tactical dark theme without needing an account.
+const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OSM</a>';
 const STALE_MS = 30_000;
 const DEFAULT_CENTER: [number, number] = [19.1738, -96.1342]; // Veracruz
 // Max accuracy (m) for a first GPS fix to auto-center the map. IP/wifi geolocation
@@ -105,10 +108,10 @@ export default function MapView() {
     mapRef.current = map;
 
     L.tileLayer(TILE_URL, {
-      subdomains: "abcd",
+      subdomains: "abc",
       maxZoom: 19,
       attribution: TILE_ATTR,
-      detectRetina: true,
+      className: "irma-dark-tiles",
     }).addTo(map);
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
