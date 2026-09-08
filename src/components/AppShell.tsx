@@ -52,28 +52,48 @@ export function AppShell() {
   // operator chooses a transport after setup, so no pin appears unbidden.
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
-    const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        // Respect a hand-pinned position — desktop "GPS" is coarse IP/wifi and
-        // would otherwise yank the operator back to a wrong spot.
-        if (useStore.getState().self.posManual) return;
-        const c = pos.coords;
-        setSelfPosition({
-          lat: c.latitude,
-          lng: c.longitude,
-          heading: c.heading != null && !Number.isNaN(c.heading) ? c.heading : undefined,
-          speed: c.speed != null && !Number.isNaN(c.speed) ? c.speed : undefined,
-          accuracy: c.accuracy,
-        });
-      },
-      (err) => {
-        useStore.setState((s) => ({
-          log: [`${new Date().toLocaleTimeString([], { hour12: false })} GPS: ${err.message}`, ...s.log].slice(0, 200),
-        }));
-      },
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
-    );
-    return () => navigator.geolocation.clearWatch(id);
+    let id: number;
+    const start = () => {
+      id = navigator.geolocation.watchPosition(
+        (pos) => {
+          // Respect a hand-pinned position — desktop "GPS" is coarse IP/wifi and
+          // would otherwise yank the operator back to a wrong spot.
+          if (useStore.getState().self.posManual) return;
+          const c = pos.coords;
+          setSelfPosition({
+            lat: c.latitude,
+            lng: c.longitude,
+            heading: c.heading != null && !Number.isNaN(c.heading) ? c.heading : undefined,
+            speed: c.speed != null && !Number.isNaN(c.speed) ? c.speed : undefined,
+            accuracy: c.accuracy,
+          });
+        },
+        (err) => {
+          useStore.setState((s) => ({
+            log: [`${new Date().toLocaleTimeString([], { hour12: false })} GPS: ${err.message}`, ...s.log].slice(0, 200),
+          }));
+        },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
+      );
+    };
+    start();
+
+    // iOS Safari suspends the watch (and its own auto-resume never fires) once
+    // the screen locks or the tab backgrounds — restart it on return so the
+    // operator's pin doesn't freeze at the last position before lock.
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      navigator.geolocation.clearWatch(id);
+      start();
+      const s = useStore.getState();
+      if (s.connection.state === "connected") s.broadcastPosition();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      navigator.geolocation.clearWatch(id);
+    };
   }, [setSelfPosition]);
 
   // Real compass heading from the device magnetometer. The desktop has no
