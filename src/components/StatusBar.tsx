@@ -59,7 +59,7 @@ export function StatusBar() {
 
   // Link health: how many teammates we've heard from recently vs total tracked.
   const total = Object.keys(peers).length;
-  const live = Object.values(peers).filter((p) => clock && Date.now() - p.lastSeen < 30_000).length;
+  const live = Object.values(peers).filter((p) => clock && Date.now() - p.lastSeen < 8_000).length;
 
   const hasFix = lat != null && lng != null;
 

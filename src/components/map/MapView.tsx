@@ -30,7 +30,7 @@ import { PeerVideoOverlay } from "@/components/map/PeerVideoOverlay";
 // tactical dark theme without needing an account.
 const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OSM</a>';
-const STALE_MS = 30_000;
+const STALE_MS = 8_000;
 const DEFAULT_CENTER: [number, number] = [19.1738, -96.1342]; // Veracruz
 // Max accuracy (m) for a first GPS fix to auto-center the map. IP/wifi geolocation
 // on VMs returns ~10km — above this we keep DEFAULT_CENTER and warn instead.

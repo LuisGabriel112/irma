@@ -49,7 +49,7 @@ function PeerRow({
   const peerLL = peer.lat != null && peer.lng != null ? { lat: peer.lat, lng: peer.lng } : null;
   const dist = here && peerLL ? haversine(here, peerLL) : null;
   const brg = here && peerLL ? bearing(here, peerLL) : null;
-  const stale = Date.now() - peer.lastSeen > 30_000;
+  const stale = Date.now() - peer.lastSeen > 8_000;
 
   return (
     <div className="flex items-stretch border-b border-tac-line/60 hover:bg-tac-panel-2">
